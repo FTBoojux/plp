@@ -1,4 +1,4 @@
-package org.example.LongestHarmoniousSubsequence594;
+package org.example.leetcode.LongestHarmoniousSubsequence594.LongestHarmoniousSubsequence594;
 
 import java.util.HashMap;
 import java.util.Map;

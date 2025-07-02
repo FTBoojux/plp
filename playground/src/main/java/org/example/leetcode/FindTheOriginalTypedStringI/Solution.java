@@ -1,4 +1,4 @@
-package org.example.FindTheOriginalTypedStringI;
+package org.example.leetcode.FindTheOriginalTypedStringI;
 
 class Solution {
     public int possibleStringCount(String word) {

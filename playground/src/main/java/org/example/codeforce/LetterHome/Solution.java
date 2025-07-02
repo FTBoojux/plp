@@ -1,4 +1,4 @@
-package org.example.LetterHome;
+package org.example.codeforce.LetterHome;
 
 import java.util.Scanner;
 

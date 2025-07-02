@@ -1,4 +1,4 @@
-package org.example.LetterHome;//package org.example.LongestHarmoniousSubsequence594;
+package org.example.codeforce.LetterHome;//package org.example.LongestHarmoniousSubsequence594;
 
 import java.util.Scanner;
 
