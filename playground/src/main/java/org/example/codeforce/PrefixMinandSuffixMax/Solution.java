@@ -1,4 +1,4 @@
-//package org.example.codeforce.PrefixMinandSuffixMax;
+package org.example.codeforce.PrefixMinandSuffixMax;
 
 import java.util.Scanner;
 
