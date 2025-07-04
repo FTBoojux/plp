@@ -79,7 +79,7 @@ public class WebClient {
             }
             outputStream.flush();
             outputStream.close();
-//            accept.close();
+            accept.close();
         }
     }
     public void close(){
