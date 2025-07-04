@@ -1,23 +1,19 @@
 package org.example.web;
 
+import framework.SimpleTestRunner;
 import org.example.web.exceptions.PortUsedException;
 
 public class WebClientCreateTest {
-    private WebClient webClient;
     public static void main(String[] args) {
         WebClientCreateTest webClientCreateTest = new WebClientCreateTest();
-        webClientCreateTest.testAll();
+        new SimpleTestRunner().runAllTests(webClientCreateTest);
     }
-    public void testAll(){
-        this.createWebClientWithUnusedPort();
-        this.createWebClientWithUsedPort();
-    }
-    private void createWebClientWithUnusedPort(){
+    public void testCreateWebClientWithUnusedPort(){
         WebClient client = WebClient.build().bind(8000);
         assert client != null;
         client.close();
     }
-    private void createWebClientWithUsedPort(){
+    public void testCreateWebClientWithUsedPort(){
         int port = 8001;
         boolean catched = false;
         WebClient clientWithUnusedPort = WebClient.build().bind(port);
