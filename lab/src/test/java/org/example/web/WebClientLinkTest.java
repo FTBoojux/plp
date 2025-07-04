@@ -11,7 +11,7 @@ public class WebClientLinkTest {
     public void testAddHandlerSuccessfully(){
         WebClient webClient = WebClient.build();
         webClient.bind(8000)
-                .addHandler("/health_check", new HealthCheckHandler());
+                .addHandler(new HealthCheckHandler());
         webClient.close();
     }
     public void testAddDuplicateUrlShouldFail(){
@@ -19,8 +19,8 @@ public class WebClientLinkTest {
         boolean catched = false;
         try{
             webClient.bind(8001)
-                    .addHandler("/health_check", new HealthCheckHandler())
-                    .addHandler("/health_check", new HealthCheckHandler());
+                    .addHandler(new HealthCheckHandler())
+                    .addHandler(new HealthCheckHandler());
         } catch (DuplicatedUrlException e){
             catched = true;
         }
