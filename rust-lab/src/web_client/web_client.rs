@@ -1,12 +1,108 @@
 use std::collections::HashMap;
-use std::net::TcpListener;
+use std::io;
+use std::io::{BufRead, BufReader, Read, Write};
+use std::net::{TcpListener, TcpStream};
 
+type Handler = Box<dyn Fn() -> Result<String, std::io::Error>>;
 pub struct WebClient {
     tcp_listener: TcpListener,
     handlers:  HashMap<String, Handler>,
 }
+#[derive(Debug)]
+struct HttpRequest {
+    method: String,
+    path: String,
+    version: String,
+}
+struct HttpResponse {
+    http_version: String,
+    // headers: HashMap<String, String>,
+    status_code: u32,
+    response_phrase: String,
+    body: String,
+}
+impl WebClient {
+    pub fn listen(&self) -> (){
+        println!("Listening for connections on {}", self.tcp_listener.local_addr().unwrap());
+        loop {
+            let input = self.tcp_listener.accept();
+            match input {
+                Ok((mut _socket,addr)) => {
+                    println!("New connection from: {}", addr);
+                    self.handle_connection(_socket);
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    break;
+                }
+            }
+        }
+    }
 
-type Handler = Box<dyn Fn() -> Result<String, std::io::Error>>;
+    fn handle_connection(&self, mut tcp_stream: TcpStream) {
+       match self.parse_request(&mut tcp_stream) {
+           Ok(request) =>{
+               let response = self.route_request(&request);
+               println!("{} {} {}",request.method,request.path,request.version);
+               tcp_stream.write(response.build().as_bytes()).expect("TODO: panic message");
+           },
+           Err(e) => {
+               println!("Error: {}", e);
+               tcp_stream.write(b"HTTP/1.1 400 Bad Request \r\n\r\n").ok();
+           }
+       }
+    }
+
+    fn parse_request(&self, stream: &mut TcpStream) -> Result<HttpRequest, io::Error> {
+        let mut buf_reader = BufReader::new(stream);
+        let mut line = String::new();
+        buf_reader.read_line(&mut line).unwrap();
+        let split_result:Vec<&str> = line.trim().split_whitespace().collect();
+        let method = split_result[0].to_string();
+        let path = split_result[1].to_string();
+        let version = split_result[2].to_string();
+        Ok(
+            HttpRequest{
+                method,
+                path,
+                version
+            }
+        )
+    }
+
+    fn route_request(&self, request: &HttpRequest) -> HttpResponse {
+
+        if let Some(handler) = self.handlers.get(&request.path){
+            match handler() {
+                Ok(response) => {
+                    HttpResponse{
+                        http_version: String::from("HTTP/1.1"),
+                        status_code: 200,
+                        response_phrase: String::from("OK"),
+                        body: response,
+                    }
+                },
+                Err(e) => {
+                    println!("Error: {}", e);
+                    HttpResponse{
+                        http_version: String::from("HTTP/1.1"),
+                        status_code: 500,
+                        response_phrase: String::from("Internal Server Error"),
+                        body: e.to_string(),
+                    }
+                }
+            }
+        }else{
+            HttpResponse{
+                http_version: String::from("HTTP/1.1"),
+                status_code: 404,
+                response_phrase: String::from("Not Found"),
+                body: String::new(),
+            }
+        }
+    }
+}
+
 
 pub struct WebClientBuilder {
     port: Option<u16>,
@@ -50,6 +146,21 @@ impl WebClientBuilder {
     }
 }
 
+impl HttpResponse{
+    pub fn build(&self) -> String{
+        let mut body = String::new();
+        body.push_str(self.http_version.as_str());
+        body.push_str(" ");
+        body.push_str(self.status_code.to_string().as_str());
+        body.push_str(" ");
+        body.push_str(self.response_phrase.as_str());
+        body.push_str("\r\n");
+        body.push_str("\r\n");
+        body.push_str(self.body.as_str());
+        body.push_str("\r\n");
+        body
+    }
+}
 
 #[cfg(test)]
 mod test{

@@ -1,2 +1,2 @@
-mod web_client;
-mod health_check;
+pub mod web_client;
+pub mod health_check;
