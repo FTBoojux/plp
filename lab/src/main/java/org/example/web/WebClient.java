@@ -3,19 +3,17 @@ package org.example.web;
 import org.example.web.exceptions.DuplicatedUrlException;
 import org.example.web.exceptions.PortUsedException;
 import org.example.web.exceptions.SocketCloseFailException;
+import org.example.web.request.HttpRequest;
 import org.example.web.utils.HttpResponseBuilder;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class WebClient {
-
+    private static final String BLANK_STRING = "";
     private void setHandlers(Map<String, RequestHandler> handlers) {
         this.handlers = handlers;
     }
@@ -58,10 +56,11 @@ public class WebClient {
             while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
                 lines.add(line);
             }
-            String requestLine = lines.getFirst();
-            String[] requestLines = requestLine.split(" ");
-            System.out.println(requestLine);
-            RequestHandler requestHandler = handlers.get(requestLines[1]);
+            HttpRequest<HashMap<String, String>> request = convertToRequest(lines);
+            System.out.println(request);
+            String[] split = request.getPath().split("\\?");
+            String path = split[0];
+            RequestHandler requestHandler = handlers.get(path);
             if(requestHandler == null){
                 String notFound = new HttpResponseBuilder()
                         .statusCode(404)
@@ -82,6 +81,34 @@ public class WebClient {
             accept.close();
         }
     }
+
+    private HttpRequest<HashMap<String, String>> convertToRequest(List<String> requestLines) {
+        System.out.println(requestLines);
+        HttpRequest<HashMap<String,String>> objectHttpRequest = new HttpRequest<>();
+        String first = requestLines.getFirst();
+        String[] firstLine = first.split(" ");
+        String method = firstLine[0];
+        String path = firstLine[1];
+        String httpVersion = firstLine[2];
+        objectHttpRequest.setMethod(method);
+        objectHttpRequest.setPath(path);
+        objectHttpRequest.setVersion(httpVersion);
+        int blankIndex = -1;
+        HashMap<String, String> headers = new HashMap<>();
+        objectHttpRequest.setHeaders(headers);
+        for(int i = 1; i < requestLines.size(); i++){
+            String trim = requestLines.get(i).trim();
+            if(BLANK_STRING.equals(trim)){
+                blankIndex = i;
+                break;
+            }else{
+                String[] split = trim.split(":");
+                headers.put(split[0], split[1]);
+            }
+        }
+        return objectHttpRequest;
+    }
+
     public void close(){
         try {
             this.socket.close();
