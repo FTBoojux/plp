@@ -68,7 +68,7 @@ public class WebClient {
                             .build();
                     outputStream.write(notFound.getBytes());
                 }else{
-                    Object object = requestHandler.get();
+                    Object object = requestHandler.get(request);
                     String response = new HttpResponseBuilder()
                             .statusCode(200)
                             .reasonPhrase("OK")

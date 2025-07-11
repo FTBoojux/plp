@@ -1,7 +1,9 @@
 package org.example.web;
 
-public interface RequestHandler {
-    default Object get(){
+import org.example.web.request.HttpRequest;
+
+public interface RequestHandler<T> {
+    default Object get(HttpRequest<T> httpRequest){
         String msg = String.join("", "The implement: ", getUrl(), "have not be implemented yet!");
         throw new RuntimeException(msg);
     }
