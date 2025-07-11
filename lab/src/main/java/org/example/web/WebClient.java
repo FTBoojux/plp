@@ -109,16 +109,16 @@ public class WebClient {
         objectHttpRequest.setVersion(httpVersion);
         if(paths.length > 1){
             paths = paths[1].split("&");
-        }
-        HashMap<String, String> params = new HashMap<>();
-        for (String s : paths) {
-            String[] keyAndValue = s.split("=");
-            if (keyAndValue.length > 2) {
-                throw new InvalidParamsException("path : {" + path + "} is invalid");
+            HashMap<String, String> params = new HashMap<>();
+            for (String s : paths) {
+                String[] keyAndValue = s.split("=");
+                if (keyAndValue.length > 2) {
+                    throw new InvalidParamsException("path : {" + path + "} is invalid");
+                }
+                params.put(keyAndValue[0], keyAndValue.length == 2 ? keyAndValue[1] : "");
             }
-            params.put(keyAndValue[0], keyAndValue.length == 2 ? keyAndValue[1] : "");
+            objectHttpRequest.setParams(params);
         }
-        objectHttpRequest.setParams(params);
 
         int blankIndex = -1;
         HashMap<String, String> headers = new HashMap<>();
