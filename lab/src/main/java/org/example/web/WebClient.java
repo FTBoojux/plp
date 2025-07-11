@@ -60,9 +60,7 @@ public class WebClient {
                 }
                 HttpRequest<HashMap<String, String>> request = convertToRequest(lines);
                 System.out.println(request);
-                String[] split = request.getPath().split("\\?");
-                String path = split[0];
-                RequestHandler requestHandler = handlers.get(path);
+                RequestHandler requestHandler = handlers.get(request.getPath());
                 if(requestHandler == null){
                     String notFound = new HttpResponseBuilder()
                             .statusCode(404)
