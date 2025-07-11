@@ -5,7 +5,7 @@ import org.example.web.exceptions.InvalidParamsException;
 import org.example.web.exceptions.PortUsedException;
 import org.example.web.exceptions.SocketCloseFailException;
 import org.example.web.request.HttpRequest;
-import org.example.web.utils.HttpResponseBuilder;
+import org.example.web.utils.http.HttpResponseBuilder;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -58,7 +58,7 @@ public class WebClient {
                 while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
                     lines.add(line);
                 }
-                HttpRequest<HashMap<String, String>> request = convertToRequest(lines);
+                HttpRequest request = convertToRequest(lines);
                 System.out.println(request);
                 RequestHandler requestHandler = handlers.get(request.getPath());
                 if(requestHandler == null){
@@ -93,9 +93,9 @@ public class WebClient {
         }
     }
 
-    private HttpRequest<HashMap<String, String>> convertToRequest(List<String> requestLines) {
+    private HttpRequest convertToRequest(List<String> requestLines) {
         System.out.println(requestLines);
-        HttpRequest<HashMap<String,String>> objectHttpRequest = new HttpRequest<>();
+        HttpRequest objectHttpRequest = new HttpRequest<>();
         String first = requestLines.getFirst();
         String[] firstLine = first.split(" ");
         String method = firstLine[0];

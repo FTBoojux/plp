@@ -1,4 +1,4 @@
-package org.example.web.utils;
+package org.example.web.utils.http;
 
 import java.util.HashMap;
 import java.util.Map;
