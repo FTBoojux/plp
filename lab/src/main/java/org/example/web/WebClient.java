@@ -1,6 +1,7 @@
 package org.example.web;
 
 import org.example.web.exceptions.DuplicatedUrlException;
+import org.example.web.exceptions.InvalidParamsException;
 import org.example.web.exceptions.PortUsedException;
 import org.example.web.exceptions.SocketCloseFailException;
 import org.example.web.request.HttpRequest;
@@ -48,37 +49,49 @@ public class WebClient {
     public void listen() throws IOException {
         while(true){
             Socket accept = socket.accept();
-            InputStream inputStream = accept.getInputStream();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            List<String> lines = new ArrayList<>();
             OutputStream outputStream = accept.getOutputStream();
-            while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
-                lines.add(line);
-            }
-            HttpRequest<HashMap<String, String>> request = convertToRequest(lines);
-            System.out.println(request);
-            String[] split = request.getPath().split("\\?");
-            String path = split[0];
-            RequestHandler requestHandler = handlers.get(path);
-            if(requestHandler == null){
-                String notFound = new HttpResponseBuilder()
-                        .statusCode(404)
-                        .reasonPhrase("Not Found")
-                        .build();
-                outputStream.write(notFound.getBytes());
-            }else{
-                Object object = requestHandler.get();
+            try{
+                InputStream inputStream = accept.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                List<String> lines = new ArrayList<>();
+                while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
+                    lines.add(line);
+                }
+                HttpRequest<HashMap<String, String>> request = convertToRequest(lines);
+                System.out.println(request);
+                String[] split = request.getPath().split("\\?");
+                String path = split[0];
+                RequestHandler requestHandler = handlers.get(path);
+                if(requestHandler == null){
+                    String notFound = new HttpResponseBuilder()
+                            .statusCode(404)
+                            .reasonPhrase("Not Found")
+                            .build();
+                    outputStream.write(notFound.getBytes());
+                }else{
+                    Object object = requestHandler.get();
+                    String response = new HttpResponseBuilder()
+                            .statusCode(200)
+                            .reasonPhrase("OK")
+                            .body(object.toString())
+                            .build();
+                    outputStream.write(response.getBytes());
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
                 String response = new HttpResponseBuilder()
-                        .statusCode(200)
-                        .reasonPhrase("OK")
-                        .body(object.toString())
+                        .statusCode(500)
+                        .reasonPhrase("Error")
+                        .body("500 Internal Server Error")
                         .build();
                 outputStream.write(response.getBytes());
+
+            } finally {
+                outputStream.flush();
+                outputStream.close();
+                accept.close();
             }
-            outputStream.flush();
-            outputStream.close();
-            accept.close();
         }
     }
 
@@ -90,9 +103,23 @@ public class WebClient {
         String method = firstLine[0];
         String path = firstLine[1];
         String httpVersion = firstLine[2];
+        String[] paths = path.split("\\?");
         objectHttpRequest.setMethod(method);
-        objectHttpRequest.setPath(path);
+        objectHttpRequest.setPath(paths[0]);
         objectHttpRequest.setVersion(httpVersion);
+        if(paths.length > 1){
+            paths = paths[1].split("&");
+        }
+        HashMap<String, String> params = new HashMap<>();
+        for (String s : paths) {
+            String[] keyAndValue = s.split("=");
+            if (keyAndValue.length > 2) {
+                throw new InvalidParamsException("path : {" + path + "} is invalid");
+            }
+            params.put(keyAndValue[0], keyAndValue.length == 2 ? keyAndValue[1] : "");
+        }
+        objectHttpRequest.setParams(params);
+
         int blankIndex = -1;
         HashMap<String, String> headers = new HashMap<>();
         objectHttpRequest.setHeaders(headers);
