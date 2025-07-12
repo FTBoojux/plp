@@ -3,17 +3,18 @@ use std::io;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-type Handler = Box<dyn Fn() -> Result<String, std::io::Error>>;
+type Handler = Box<dyn Fn(&HttpRequest) -> Result<String, std::io::Error>>;
 pub struct WebClient {
     tcp_listener: TcpListener,
     handlers:  HashMap<String, Handler>,
 }
 #[derive(Debug)]
-struct HttpRequest {
+pub struct HttpRequest {
     method: String,
     path: String,
     version: String,
     headers: HashMap<String, String>,
+    pub params: HashMap<String, String>,
 }
 struct HttpResponse {
     http_version: String,
@@ -61,8 +62,22 @@ impl WebClient {
         buf_reader.read_line(&mut line)?;
         let request_line_vec: Vec<&str> = line.trim().split_whitespace().collect();
         let method = request_line_vec[0].to_string();
-        let path = request_line_vec[1].to_string();
+        let origin_path = request_line_vec[1].to_string();
         let version = request_line_vec[2].to_string();
+        let path_with_params:Vec<&str> = origin_path.split("?").collect();
+        let path = path_with_params[0].to_string();
+        let mut params = HashMap::<String, String>::new();
+        if path_with_params.len() > 1 {
+            let _params:Vec<&str> = path_with_params[1].split("&").collect();
+            for x in _params {
+                let vec = x.split("=").collect::<Vec<&str>>();
+                if vec.len() > 1 {
+                    params.insert(vec[0].to_string(), vec[1].to_string());
+                }else{
+                    params.insert(vec[0].to_string(), "".to_string());
+                }
+            }
+        }
         loop {
             line.clear();
             let size = buf_reader.read_line(&mut line)?;
@@ -88,6 +103,7 @@ impl WebClient {
                 path,
                 version,
                 headers,
+                params,
             }
         )
     }
@@ -95,7 +111,7 @@ impl WebClient {
     fn route_request(&self, request: &HttpRequest) -> HttpResponse {
 
         if let Some(handler) = self.handlers.get(&request.path){
-            match handler() {
+            match handler(request) {
                 Ok(response) => {
                     HttpResponse{
                         http_version: String::from("HTTP/1.1"),
