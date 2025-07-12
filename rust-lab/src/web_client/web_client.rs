@@ -13,6 +13,7 @@ struct HttpRequest {
     method: String,
     path: String,
     version: String,
+    headers: HashMap<String, String>,
 }
 struct HttpResponse {
     http_version: String,
@@ -56,16 +57,37 @@ impl WebClient {
     fn parse_request(&self, stream: &mut TcpStream) -> Result<HttpRequest, io::Error> {
         let mut buf_reader = BufReader::new(stream);
         let mut line = String::new();
-        buf_reader.read_line(&mut line).unwrap();
-        let split_result:Vec<&str> = line.trim().split_whitespace().collect();
-        let method = split_result[0].to_string();
-        let path = split_result[1].to_string();
-        let version = split_result[2].to_string();
+        let mut lines: Vec<String> = Vec::new();
+        buf_reader.read_line(&mut line)?;
+        let request_line_vec: Vec<&str> = line.trim().split_whitespace().collect();
+        let method = request_line_vec[0].to_string();
+        let path = request_line_vec[1].to_string();
+        let version = request_line_vec[2].to_string();
+        loop {
+            line.clear();
+            let size = buf_reader.read_line(&mut line)?;
+            if size == 0 {
+                break;
+            }
+            if line == "\r\n" || line == "\n" {
+                break;
+            }
+            lines.push(line.clone());
+        }
+        // let request_line = &lines[0];
+        let mut headers:HashMap<String, String> = HashMap::new();
+        lines.iter().for_each(|line| {
+            let header:Vec<&str> = line.split(": ").collect();
+            let key = header[0];
+            let value = if header.len() > 1 {header[1]} else {""};
+            headers.insert(key.to_string(), value.to_string());
+        });
         Ok(
             HttpRequest{
                 method,
                 path,
-                version
+                version,
+                headers,
             }
         )
     }
