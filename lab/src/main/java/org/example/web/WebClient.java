@@ -6,6 +6,10 @@ import org.example.web.exceptions.PortUsedException;
 import org.example.web.exceptions.SocketCloseFailException;
 import org.example.web.request.HttpRequest;
 import org.example.web.utils.http.HttpResponseBuilder;
+import org.example.web.utils.web.MatchResult;
+import org.example.web.utils.web.PathType;
+import org.example.web.utils.web.RoutePattern;
+import org.example.web.utils.web.RouteTree;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -15,16 +19,26 @@ import java.util.*;
 
 public class WebClient {
     private static final String BLANK_STRING = "";
+
+    private Map<String, RequestHandler> handlers;
+
+    private RouteTree routeTree;
+    private ServerSocket socket;
+    private int port;
     private void setHandlers(Map<String, RequestHandler> handlers) {
         this.handlers = handlers;
     }
+    public RouteTree getRouteTree() {
+        return routeTree;
+    }
 
-    private Map<String, RequestHandler> handlers;
-    private ServerSocket socket;
-    private int port;
+    public void setRouteTree(RouteTree routeTree) {
+        this.routeTree = routeTree;
+    }
     public static WebClient build(){
         WebClient webClient = new WebClient();
         webClient.setHandlers(new HashMap<>());
+        webClient.setRouteTree(new RouteTree(""));
         return webClient;
     }
     public WebClient bind(int port){
@@ -43,7 +57,13 @@ public class WebClient {
         if(handlers.containsKey(handler.getUrl())){
             throw new DuplicatedUrlException(handler.getUrl());
         }
-        this.handlers.put(handler.getUrl(), handler);
+        RoutePattern parse = RoutePattern.parse(handler.getUrl());
+        if(parse.getPathType() == PathType.STATIC){
+            this.handlers.put(handler.getUrl(), handler);
+        }else{
+            parse.setRequestHandler(handler);
+            this.routeTree.addRoute(parse);
+        }
         return this;
     }
     public void listen() throws IOException {
@@ -60,15 +80,17 @@ public class WebClient {
                 }
                 HttpRequest request = convertToRequest(lines);
                 System.out.println(request);
-                RequestHandler requestHandler = handlers.get(request.getPath());
-                if(requestHandler == null){
+                MatchResult matchResult = findRequestHandler(request.getPath());
+//                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
+                if(matchResult == null || matchResult.requestHandler == null){
                     String notFound = new HttpResponseBuilder()
                             .statusCode(404)
                             .reasonPhrase("Not Found")
                             .build();
                     outputStream.write(notFound.getBytes());
                 }else{
-                    Object object = requestHandler.get(request);
+                    request.setPathVariables(matchResult.pathVariables);
+                    Object object = matchResult.requestHandler.get(request);
                     String response = new HttpResponseBuilder()
                             .statusCode(200)
                             .reasonPhrase("OK")
@@ -90,6 +112,15 @@ public class WebClient {
                 outputStream.close();
                 accept.close();
             }
+        }
+    }
+
+    private MatchResult findRequestHandler(String path) {
+        RequestHandler requestHandler = this.handlers.get(path);
+        if(requestHandler != null){
+            return new MatchResult(requestHandler, new HashMap<>(0));
+        }else{
+            return this.routeTree.findWithVariable(path);
         }
     }
 

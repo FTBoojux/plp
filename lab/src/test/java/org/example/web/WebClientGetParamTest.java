@@ -1,7 +1,9 @@
 package org.example.web;
 
+import framework.FTest;
 import framework.SimpleTestRunner;
 import org.example.web.handlers.HealthCheckHandler;
+import org.example.web.handlers.PathVariableHandler;
 import org.example.web.handlers.QuestionParamHandler;
 import org.example.web.utils.http.HttpRequestTemplates;
 import org.example.web.utils.http.HttpRequestUtil;
@@ -15,7 +17,7 @@ public class WebClientGetParamTest {
     public static void main(String[] args) {
         new SimpleTestRunner().runAllTests(new WebClientGetParamTest());
     }
-
+    @FTest
     public void testSendRequestWithQuestionParam() throws IOException, InterruptedException {
         WebClient webClient;
         webClient = WebClient
@@ -33,6 +35,28 @@ public class WebClientGetParamTest {
         thread.start();
         HttpRequest httpRequest = HttpRequestTemplates.baseGetRequestBuilder("http://127.0.0.1:8000/pageQuery?page=1&size=10")
                 .build();
+        HttpResponse<String> httpResponse = HttpRequestUtil.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        System.out.println(httpResponse.body());
+        assert httpResponse.statusCode() == 200;
+        thread.interrupt();
+        webClient.close();
+    }
+    @FTest
+    public void sendRequestWithPathVariables() throws IOException, InterruptedException {
+        WebClient webClient;
+        webClient = WebClient
+                .build()
+                .bind(8001)
+                .addHandler(new PathVariableHandler());
+        Thread thread = new Thread(() -> {
+            try {
+                webClient.listen();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        thread.start();
+        HttpRequest httpRequest = HttpRequestTemplates.baseGetRequestBuilder("http://127.0.0.1:8001/hello,world!/path").build();
         HttpResponse<String> httpResponse = HttpRequestUtil.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         System.out.println(httpResponse.body());
         assert httpResponse.statusCode() == 200;
