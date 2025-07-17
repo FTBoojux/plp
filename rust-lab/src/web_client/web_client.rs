@@ -13,7 +13,7 @@ pub struct HttpRequest {
     method: String,
     path: String,
     version: String,
-    headers: HashMap<String, String>,
+    pub headers: HashMap<String, String>,
     pub params: HashMap<String, String>,
 }
 struct HttpResponse {
@@ -64,20 +64,6 @@ impl WebClient {
         let method = request_line_vec[0].to_string();
         let origin_path = request_line_vec[1].to_string();
         let version = request_line_vec[2].to_string();
-        let path_with_params:Vec<&str> = origin_path.split("?").collect();
-        let path = path_with_params[0].to_string();
-        let mut params = HashMap::<String, String>::new();
-        if path_with_params.len() > 1 {
-            let _params:Vec<&str> = path_with_params[1].split("&").collect();
-            for x in _params {
-                let vec = x.split("=").collect::<Vec<&str>>();
-                if vec.len() > 1 {
-                    params.insert(vec[0].to_string(), vec[1].to_string());
-                }else{
-                    params.insert(vec[0].to_string(), "".to_string());
-                }
-            }
-        }
         loop {
             line.clear();
             let size = buf_reader.read_line(&mut line)?;
@@ -89,7 +75,17 @@ impl WebClient {
             }
             lines.push(line.clone());
         }
-        // let request_line = &lines[0];
+        let mut params: HashMap<String, String> = HashMap::new();
+        let paths:Vec<&str> = origin_path.split("?").collect();
+        let path = paths[0].to_string();
+        if paths.len() > 1{
+            let pairs:Vec<&str> = paths[1].split("&").collect();
+            for pair in pairs {
+                let kv:Vec<&str> = pair.split("=").collect();
+                params.insert(kv[0].to_string(), if kv.len() > 1 { kv[1].to_string() } else { "".to_string() } );
+            }
+        }
+
         let mut headers:HashMap<String, String> = HashMap::new();
         lines.iter().for_each(|line| {
             let header:Vec<&str> = line.split(": ").collect();
@@ -101,9 +97,9 @@ impl WebClient {
             HttpRequest{
                 method,
                 path,
+                params,
                 version,
                 headers,
-                params,
             }
         )
     }

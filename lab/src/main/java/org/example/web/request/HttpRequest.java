@@ -8,6 +8,7 @@ public class HttpRequest<T> {
     private String version;
     private HashMap<String,String> headers;
     private HashMap<String,String> params;
+    private HashMap<String,String> pathVariables;
     private T body;
 
     @Override
@@ -18,6 +19,7 @@ public class HttpRequest<T> {
                 ", version='" + version + '\'' +
                 ", headers=" + headers +
                 ", params=" + params +
+                ", pathVariables=" + pathVariables +
                 ", body=" + body +
                 '}';
     }
@@ -71,5 +73,12 @@ public class HttpRequest<T> {
 
     public void setParams(HashMap<String, String> params) {
         this.params = params;
+    }
+    public HashMap<String, String> getPathVariables() {
+        return pathVariables;
+    }
+
+    public void setPathVariables(HashMap<String, String> pathVariables) {
+        this.pathVariables = pathVariables;
     }
 }

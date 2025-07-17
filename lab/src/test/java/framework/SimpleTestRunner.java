@@ -33,10 +33,10 @@ public class SimpleTestRunner {
     private void runTestByMethodName(Object instance, Method m) {
         try {
             m.invoke(instance);
-            System.out.println("method: " + m.getName() + "in class " + instance.getClass().getName() + " passed ");
+            System.out.println("method: " + m.getName() + " in class " + instance.getClass().getName() + " passed ");
             ++passed;
         } catch (Exception e) {
-            System.out.println("method: " + m.getName() + "in class " + instance.getClass().getName() + " failed");
+            System.out.println("method: " + m.getName() + " in class " + instance.getClass().getName() + " failed");
             ++failed;
             System.out.println(e.getCause().getMessage());
         } finally {
