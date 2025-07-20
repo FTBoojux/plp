@@ -1,10 +1,15 @@
-use crate::web_client::web_client::HttpRequest;
+use crate::web_client::web_client::{HttpRequest, RequestMatchResult};
 
-pub fn health_check(http_request:&HttpRequest) -> Result<String,std::io::Error> {
+pub fn health_check(http_request:&RequestMatchResult) -> Result<String,std::io::Error> {
     Ok("health check".to_string())
 }
 
-pub fn question_params(http_request:&HttpRequest) -> Result<String,std::io::Error> {
-    let map = &http_request.params;
+pub fn question_params(http_request:&RequestMatchResult) -> Result<String,std::io::Error> {
+    let map = &http_request.request.params;
     Ok(format!("page: {}, size: {}",map.get("page").unwrap_or(&"0".to_string()),map.get("size").unwrap_or(&"0".to_string())))
+}
+
+pub fn path_variable(http_request:&RequestMatchResult) -> Result<String,std::io::Error> {
+    let map = &http_request.path_variables;
+    Ok(format!("name: {}", map.get("name").unwrap_or(&"0".to_string())))
 }
