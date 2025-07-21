@@ -1,8 +1,9 @@
-use crate::web_client::enums::RequestHandler;
+use crate::web_client::enums::{RequestHandler, WILDCARD_STR};
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
+
 struct MatchCandidate<'a> {
     route_tree: &'a RouteTree,
     path_variables: HashMap<String, String>,
@@ -24,7 +25,8 @@ impl Debug for MatchResult<'_> {
 pub struct RouteTree{
     segment: String,
     path: String,
-    children: HashMap<String, RouteTree>,
+    static_routes: HashMap<String, RouteTree>,
+    dynamic_routes: HashMap<String, RouteTree>,
     request_handler: Option<RequestHandler>
 }
 
@@ -32,7 +34,8 @@ impl RouteTree{
     pub fn new(segment: &str, path: &str) -> RouteTree{
         RouteTree{
             segment: segment.to_string(),
-            children : HashMap::new(),
+            static_routes: HashMap::new(),
+            dynamic_routes: HashMap::new(),
             path: path.to_string(),
             request_handler: None
         }
@@ -42,15 +45,18 @@ impl RouteTree{
         let segments = route.segments;
         for i in 0..segments.len(){
             let segment = &segments[i];
-            if !node.children.contains_key(&segment.first) {
-               node.children.insert(segment.first.clone(), RouteTree::new(&segment.first, &segment.second));
+            let is_wildcard = WILDCARD_STR == segment.first;
+            let next_level = if is_wildcard {&mut node.dynamic_routes} else { &mut node.static_routes };
+            let _segment = if is_wildcard { segment.second.clone() } else { segment.first.clone() };
+            if !next_level.contains_key(&_segment) {
+                next_level.insert(_segment.clone(),RouteTree::new(&segment.first, &segment.second));
             }
             if i+1 == segments.len() {
                 if let Some(handler) = route.handler.take(){
-                    node.children.get_mut(&segment.first).unwrap().request_handler = Some(handler);
+                    next_level.get_mut(&_segment).unwrap().request_handler = Some(handler);
                 }
             }
-            node = node.children.get_mut(&segment.first).unwrap();
+            node = next_level.get_mut(&_segment).unwrap();
         }
     }
     pub fn find(&self, path: &str) -> Option<MatchResult> {
@@ -64,21 +70,23 @@ impl RouteTree{
             let mut next_level:VecDeque<MatchCandidate> = VecDeque::new();
             while !queue.is_empty() {
                 let candidate = queue.pop_front().unwrap();
-                let child = candidate.route_tree.children.get(&segment.to_string());
+                let child = candidate.route_tree.static_routes.get(&segment.to_string());
                 if let Some(child) = child {
                     next_level.push_back(MatchCandidate{
                         route_tree: child,
                         path_variables: candidate.path_variables.clone(),
                     })
                 }
-                let child = candidate.route_tree.children.get("*");
-                if let Some(child) = child {
-                    let mut path_variables = candidate.path_variables.clone();
-                    path_variables.insert(child.path.clone(), segment.to_string());
-                    next_level.push_back(MatchCandidate{
-                        route_tree: child,
-                        path_variables
-                    })
+                let children:Vec<&RouteTree> = candidate.route_tree.dynamic_routes.values().collect();
+                if !children.is_empty() {
+                    for child in children {
+                        let mut path_variables = candidate.path_variables.clone();
+                        path_variables.insert(child.path.clone(), segment.to_string());
+                        next_level.push_back(MatchCandidate{
+                            route_tree: child,
+                            path_variables,
+                        })
+                    }
                 }
             }
             queue = next_level;
@@ -102,7 +110,7 @@ impl Debug for RouteTree{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RouteTree")
         .field("segment", &self.segment)
-        .field("children", &self.children)
+        .field("children", &self.static_routes)
             .field("path", &self.path)
             .finish()
     }

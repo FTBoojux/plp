@@ -9,6 +9,4 @@ pub enum PathType{
     DYNAMIC,
 }
 
-pub enum Wildcard{
-    Wildcard,
-}
+pub static WILDCARD_STR: &'static str = "*";
