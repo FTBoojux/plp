@@ -38,6 +38,8 @@ public class RouteTree {
     private final String path;
     private final Map<String, RouteTree> staticRoutes;
 
+    private final Map<String, RouteTree> dynamicRoutes;
+
     public Map<String, RouteTree> getDynamicRoutes() {
         return dynamicRoutes;
     }
@@ -49,8 +51,6 @@ public class RouteTree {
     public boolean isWildcard() {
         return isWildcard;
     }
-
-    private final Map<String, RouteTree> dynamicRoutes;
 
 
     private RequestHandler requestHandler;
