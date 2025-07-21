@@ -122,8 +122,8 @@ impl WebClient {
 
     fn route_request(&self, request: HttpRequest) -> HttpResponse {
 
-        if let Ok(matchResult) = self.find_request_handler(request){
-            match matchResult.handle(){
+        if let Ok(match_result) = self.find_request_handler(request){
+            match match_result.handle(){
                 Ok(response)=>{
                     HttpResponse{
                         http_version: String::from("HTTP/1.1"),
@@ -210,7 +210,7 @@ impl WebClientBuilder {
         match TcpListener::bind(address) {
             Ok(tcp_listener) => Ok(WebClient{ tcp_listener,
                 handlers: self.handlers,
-                route_tree: RouteTree::new("","")
+                route_tree: self.route_tree
             }),
             Err(e) => Err(e),
         }
@@ -219,10 +219,10 @@ impl WebClientBuilder {
         if self.handlers.contains_key(path) {
             return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists, format!("Handler already exists: {}", path)));
         }
-        let pattern = RoutePattern::parse(path);
+        let pattern = RoutePattern::parse(path, handler);
         match pattern.path_type {
             PathType::STATIC => {
-                self.handlers.insert(path.to_string(), handler);
+                self.handlers.insert(path.to_string(), pattern.handler.unwrap());
             }
             PathType::DYNAMIC => {
                 self.route_tree.add_route(pattern)

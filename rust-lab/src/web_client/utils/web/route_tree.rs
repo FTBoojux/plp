@@ -49,7 +49,6 @@ impl RouteTree{
                 if let Some(handler) = route.handler.take(){
                     node.children.get_mut(&segment.first).unwrap().request_handler = Some(handler);
                 }
-                ()
             }
             node = node.children.get_mut(&segment.first).unwrap();
         }
@@ -118,20 +117,20 @@ mod test{
     #[test]
     pub fn match_path_and_variable(){
         let mut route_tree = RouteTree::new("", "");
-        let mut pattern1 = RoutePattern::parse("/{pathVariable1}/{pathVariable2}/path");
-        pattern1.handler = Some(Box::new(health_check));
+        let mut pattern1 = RoutePattern::parse("/{pathVariable1}/{pathVariable2}/path", Box::new(health_check));
+        // pattern1.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern1);
 
-        let mut pattern2 = RoutePattern::parse("/{pathVariable}/path");
-        pattern2.handler = Some(Box::new(health_check));
+        let mut pattern2 = RoutePattern::parse("/{pathVariable}/path", Box::new(health_check));
+        // pattern2.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern2);
 
-        let mut pattern3 = RoutePattern::parse("/path/{pathVariable}");
-        pattern3.handler = Some(Box::new(health_check));
+        let mut pattern3 = RoutePattern::parse("/path/{pathVariable}", Box::new(health_check));
+        // pattern3.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern3);
 
-        let mut pattern4 = RoutePattern::parse("/{pathVariable1}/path/{pathVariable2}/path");
-        pattern4.handler = Some(Box::new(health_check));
+        let mut pattern4 = RoutePattern::parse("/{pathVariable1}/path/{pathVariable2}/path", Box::new(health_check));
+        // pattern4.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern4);
 
         let option = route_tree.find("/1/2/path");

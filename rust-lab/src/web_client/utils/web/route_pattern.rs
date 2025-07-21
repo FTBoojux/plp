@@ -18,7 +18,7 @@ impl RoutePattern {
             handler: None,
         }
     }
-    pub fn parse(path: &str) -> RoutePattern {
+    pub fn parse(path: &str, handler: RequestHandler) -> RoutePattern {
         let splits:Vec<&str> = path.split("/").collect();
         let mut segments: Vec<Pair<String, String>> = Vec::new();
         let mut variable_exists = false;
@@ -30,11 +30,12 @@ impl RoutePattern {
                 segments.push(Pair::new(split.to_string(),split.to_string()));
             }
         }
-        Self::new(
-            path,
-             if variable_exists { DYNAMIC } else { STATIC },
-            segments
-        )
+        RoutePattern {
+            pattern: path.to_string(),
+            path_type: if variable_exists {DYNAMIC} else {STATIC},
+            segments,
+            handler: Some(handler),
+        }
     }
 }
 
