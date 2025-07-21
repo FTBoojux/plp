@@ -1,6 +1,7 @@
 package org.example.web.utils.web;
 
 import framework.FTest;
+import framework.FtAssert;
 import framework.SimpleTestRunner;
 
 public class RoutePatternTest {
@@ -12,7 +13,7 @@ public class RoutePatternTest {
     public void createStaticRoutePatternSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/healthCheck");
         System.out.println(parse);
-        assert parse.getPathType() == PathType.STATIC;
+        FtAssert.fAssert(parse.getPathType() == PathType.STATIC);
 
     }
 
@@ -20,18 +21,18 @@ public class RoutePatternTest {
     public void createDynamicRoutePatternEndWithVariableSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/healthCheck/{pathVariable}");
         System.out.println(parse);
-        assert parse.getPathType() == PathType.DYNAMIC;
+        FtAssert.fAssert(parse.getPathType() == PathType.DYNAMIC);
     }
     @FTest
     public void createDynamicRoutePatternStartWithVariableSuccessfully2(){
         RoutePattern parse = RoutePattern.parse("/{pathVariable}/healthCheck");
         System.out.println(parse);
-        assert parse.getPathType() == PathType.DYNAMIC;
+        FtAssert.fAssert(parse.getPathType() == PathType.DYNAMIC);
     }
     @FTest
     public void createDynamicRoutePatternMixedWithVariableSuccessfully3(){
         RoutePattern parse = RoutePattern.parse("/{pathVariable}/{pathVariable2}");
         System.out.println(parse);
-        assert parse.getPathType() == PathType.DYNAMIC;
+        FtAssert.fAssert(parse.getPathType() == PathType.DYNAMIC);
     }
 }

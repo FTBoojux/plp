@@ -1,5 +1,6 @@
 package org.example.web.utils.web;
 
+import GlobalEnums.StringEnums;
 import org.example.web.RequestHandler;
 import org.example.web.utils.Pair;
 
@@ -32,36 +33,55 @@ class MatchCandidate {
 }
 
 public class RouteTree {
-    private final String segment;
+//    private final String segment;
+    private final boolean isWildcard;
     private final String path;
-    private final Map<String, RouteTree> routes;
+    private final Map<String, RouteTree> staticRoutes;
+
+    public Map<String, RouteTree> getDynamicRoutes() {
+        return dynamicRoutes;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public boolean isWildcard() {
+        return isWildcard;
+    }
+
+    private final Map<String, RouteTree> dynamicRoutes;
 
 
     private RequestHandler requestHandler;
+    @Deprecated
     public RouteTree(String segment){
-        this.segment = segment;
-        this.routes = new HashMap<>();
+        this.staticRoutes = new HashMap<>();
+        this.dynamicRoutes = new HashMap<>();
         this.path = null;
         this.requestHandler = null;
+        this.isWildcard = false;
+    }
+    public RouteTree(String path, boolean wildcard){
+        this.staticRoutes = new HashMap<>();
+        this.dynamicRoutes = new HashMap<>();
+        this.path = path;
+        this.requestHandler = null;
+        this.isWildcard = wildcard;
     }
     private RouteTree(String segment, String path){
-        this.segment = segment;
         this.path = path;
-        this.routes = new HashMap<>();
+        this.staticRoutes = new HashMap<>();
+        this.dynamicRoutes = new HashMap<>();
         this.requestHandler = null;
+        this.isWildcard = false;
     }
     public static RouteTree parse(String path){
         return  new RouteTree("*",path);
     }
 
-
-
-    public String getSegment() {
-        return segment;
-    }
-
-    public Map<String, RouteTree> getRoutes() {
-        return routes;
+    public Map<String, RouteTree> getStaticRoutes() {
+        return staticRoutes;
     }
 
     public RequestHandler getRequestHandler() {
@@ -74,7 +94,7 @@ public class RouteTree {
      * add a route node to current route node
      */
     public void addRoute(String segment, RouteTree route){
-        routes.put(segment, route);
+        staticRoutes.put(segment, route);
     }
 
     /**
@@ -86,14 +106,19 @@ public class RouteTree {
         List<Pair<String, String>> segments = route.getSegments();
         for (int i = 0; i < segments.size(); i++) {
             String segment = segments.get(i).first;
-            if(!node.routes.containsKey(segment)){
-                node.routes.put(segment, new RouteTree(segment,segments.get(i).second));
+            Map<String, RouteTree> routes = node.staticRoutes;
+            if(StringEnums.WILDCARD.getString().equals(segment)){
+                routes = node.dynamicRoutes;
+                segment = segments.get(i).second;
+            }
+            if(!routes.containsKey(segment)){
+                routes.put(segment, new RouteTree(segment,segments.get(i).second));
             }
             if(i+1 == segments.size()){
-                node.routes.get(segment).setRequestHandler(route.getRequestHandler());
+                routes.get(segment).setRequestHandler(route.getRequestHandler());
                 return;
             }
-            node = node.routes.get(segment);
+            node = routes.get(segment);
         }
     }
     public RouteTree find(String path){
@@ -106,16 +131,16 @@ public class RouteTree {
             int size = queue.size();
             for(int i = size; i > 0; --i){
                 RouteTree current = queue.poll();
-                if( null == current.getRoutes() || current.getRoutes().isEmpty() ){
+                if( null == current.getStaticRoutes() || current.getStaticRoutes().isEmpty() ){
                     continue;
                 }
-                RouteTree routeTree = current.getRoutes().get(split[idx]);
+                RouteTree routeTree = current.getStaticRoutes().get(split[idx]);
                 if(routeTree != null){
                     queue.add(routeTree);
                 }
-                RouteTree routeTree1 = current.getRoutes().get("*");
-                if(routeTree1 != null){
-                    queue.add(routeTree1);
+                Map<String, RouteTree> children = current.getDynamicRoutes();
+                if(children != null  && !children.isEmpty()){
+                    queue.addAll(children.values());
                 }
             }
             ++idx;
@@ -141,15 +166,17 @@ public class RouteTree {
             Queue<MatchCandidate> nextLevel = new ArrayDeque<>();
             while (!queue.isEmpty()) {
                 MatchCandidate candidate = queue.poll();
-                RouteTree routeTree = candidate.getNode().routes.get(segment);
+                RouteTree routeTree = candidate.getNode().staticRoutes.get(segment);
                 if (routeTree != null) {
                     nextLevel.add(new MatchCandidate(routeTree, new HashMap<>(candidate.getPathVariables())));
                 }
-                RouteTree routeTree1 = candidate.getNode().routes.get("*");
-                if (routeTree1 != null) {
-                    Map<String, String> pathVariables = new HashMap<>(candidate.getPathVariables());
-                    pathVariables.put(routeTree1.path, segment);
-                    nextLevel.add(new MatchCandidate(routeTree1, pathVariables));
+                Collection<RouteTree> values = candidate.getNode().dynamicRoutes.values();
+                if (values != null && !values.isEmpty()) {
+                    for (RouteTree value : values) {
+                        Map<String, String> pathVariables = new HashMap<>(candidate.getPathVariables());
+                        pathVariables.put(value.path, segment);
+                        nextLevel.add(new MatchCandidate(value, pathVariables));
+                    }
                 }
             }
             queue = nextLevel;
@@ -163,14 +190,16 @@ public class RouteTree {
     }
 
     public void removeRoute(String segment){
-        routes.remove(segment);
+        staticRoutes.remove(segment);
     }
 
     @Override
     public String toString() {
         return "RouteTree{" +
-                "segment='" + segment + '\'' +
-                ", routes=" + routes +
+                "isWildcard=" + isWildcard +
+                ", path='" + path + '\'' +
+                ", staticRoutes=" + staticRoutes +
+                ", dynamicRoutes=" + dynamicRoutes +
                 ", requestHandler=" + requestHandler +
                 '}';
     }
