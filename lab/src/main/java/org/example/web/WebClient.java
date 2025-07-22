@@ -16,6 +16,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WebClient {
     private static final String BLANK_STRING = "";
@@ -25,6 +27,16 @@ public class WebClient {
     private RouteTree routeTree;
     private ServerSocket socket;
     private int port;
+
+
+    private ExecutorService threadPool;
+    public ExecutorService getThreadPool() {
+        return threadPool;
+    }
+
+    public void setThreadPool(ExecutorService threadPool) {
+        this.threadPool = threadPool;
+    }
     private void setHandlers(Map<String, RequestHandler> handlers) {
         this.handlers = handlers;
     }
@@ -38,7 +50,8 @@ public class WebClient {
     public static WebClient build(){
         WebClient webClient = new WebClient();
         webClient.setHandlers(new HashMap<>());
-        webClient.setRouteTree(new RouteTree(""));
+        webClient.setRouteTree(new RouteTree("",true));
+        webClient.setThreadPool(Executors.newCachedThreadPool());
         return webClient;
     }
     public WebClient bind(int port){
@@ -69,49 +82,59 @@ public class WebClient {
     public void listen() throws IOException {
         while(true){
             Socket accept = socket.accept();
-            OutputStream outputStream = accept.getOutputStream();
-            try{
-                InputStream inputStream = accept.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                String line;
-                List<String> lines = new ArrayList<>();
-                while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
-                    lines.add(line);
+            threadPool.execute(()->{
+                try {
+                    handleRequest(accept);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
                 }
-                HttpRequest request = convertToRequest(lines);
-                System.out.println(request);
-                MatchResult matchResult = findRequestHandler(request.getPath());
+            });
+        }
+    }
+
+    private void handleRequest(Socket accept) throws IOException {
+        OutputStream outputStream = accept.getOutputStream();
+        try{
+            InputStream inputStream = accept.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            List<String> lines = new ArrayList<>();
+            while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
+                lines.add(line);
+            }
+            HttpRequest request = convertToRequest(lines);
+            System.out.println(request);
+            MatchResult matchResult = findRequestHandler(request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
-                if(matchResult == null || matchResult.requestHandler == null){
-                    String notFound = new HttpResponseBuilder()
-                            .statusCode(404)
-                            .reasonPhrase("Not Found")
-                            .build();
-                    outputStream.write(notFound.getBytes());
-                }else{
-                    request.setPathVariables(matchResult.pathVariables);
-                    Object object = matchResult.requestHandler.get(request);
-                    String response = new HttpResponseBuilder()
-                            .statusCode(200)
-                            .reasonPhrase("OK")
-                            .body(object.toString())
-                            .build();
-                    outputStream.write(response.getBytes());
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
+            if(matchResult == null || matchResult.requestHandler == null){
+                String notFound = new HttpResponseBuilder()
+                        .statusCode(404)
+                        .reasonPhrase("Not Found")
+                        .build();
+                outputStream.write(notFound.getBytes());
+            }else{
+                request.setPathVariables(matchResult.pathVariables);
+                Object object = matchResult.requestHandler.get(request);
                 String response = new HttpResponseBuilder()
-                        .statusCode(500)
-                        .reasonPhrase("Error")
-                        .body("500 Internal Server Error")
+                        .statusCode(200)
+                        .reasonPhrase("OK")
+                        .body(object.toString())
                         .build();
                 outputStream.write(response.getBytes());
-
-            } finally {
-                outputStream.flush();
-                outputStream.close();
-                accept.close();
             }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            String response = new HttpResponseBuilder()
+                    .statusCode(500)
+                    .reasonPhrase("Error")
+                    .body("500 Internal Server Error")
+                    .build();
+            outputStream.write(response.getBytes());
+
+        } finally {
+            outputStream.flush();
+            outputStream.close();
+            accept.close();
         }
     }
 
