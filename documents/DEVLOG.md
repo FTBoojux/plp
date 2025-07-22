@@ -6,3 +6,10 @@
 modify the process of dynamic path match, now it support same prefix with different path variables' name
 
 [details](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250721.pathvariablesForRust.en.md)
+
+### 2025-07-22
+引入线程池处理请求
+
+[细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250722.stressTestOnSingleMachine.en.md)
+
+introduce thread pool to handle the request instead of handling the request in the while loop
