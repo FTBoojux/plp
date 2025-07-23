@@ -29,15 +29,15 @@ public class WebClientStressTest {
     @FTest
     public void testDynamicPath() throws InterruptedException {
         WebClientStressTest clientStressTest = new WebClientStressTest();
-        for(int i = 10; i <= 100; i+=10){
+        for(int i = 100; i <= 200; i+=10){
             clientStressTest.runDynamicPath(i);
             System.out.println(LINE);
         }
     }
-//    @FTest
+    @FTest
     public void testStaticPath() throws InterruptedException {
         WebClientStressTest clientStressTest = new WebClientStressTest();
-        for(int i = 10; i <= 100; i+=10){
+        for(int i = 100; i <= 200; i+=10){
             clientStressTest.runStaticPathStressTest(i);
             System.out.println(LINE);
         }

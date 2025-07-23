@@ -27,6 +27,7 @@ public class WebClient {
     private RouteTree routeTree;
     private ServerSocket socket;
     private int port;
+    private int backLog = 200;
 
 
     private ExecutorService threadPool;
@@ -55,15 +56,11 @@ public class WebClient {
         return webClient;
     }
     public WebClient bind(int port){
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(port);
-        try {
-            this.socket = new ServerSocket();
-            this.socket.bind(inetSocketAddress);
-            this.port = port;
-            System.out.println("listening on port " + inetSocketAddress.getPort());
-        } catch (IOException e) {
-            throw new PortUsedException(port);
-        }
+        this.port = port;
+        return this;
+    }
+    public WebClient backLog(int backLog){
+        this.backLog = backLog;
         return this;
     }
     public WebClient addHandler(RequestHandler handler){
@@ -80,6 +77,8 @@ public class WebClient {
         return this;
     }
     public void listen() throws IOException {
+        this.socket = new ServerSocket(this.port, this.backLog);
+        System.out.println("listen on port:" + this.port);
         while(true){
             Socket accept = socket.accept();
             threadPool.execute(()->{
