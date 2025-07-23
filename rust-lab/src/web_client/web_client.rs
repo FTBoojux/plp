@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 use std::io;
 use std::io::{BufRead, BufReader, ErrorKind, Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::sync::Arc;
+use socket2::{Domain, Socket, Type};
 use crate::web_client::enums::{PathType, RequestHandler};
+use crate::web_client::utils::thread_pool::ThreadPool;
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use crate::web_client::utils::web::route_tree::RouteTree;
 
@@ -10,6 +13,7 @@ pub struct WebClient {
     tcp_listener: TcpListener,
     handlers:  HashMap<String, RequestHandler>,
     route_tree: RouteTree,
+    thread_pool: ThreadPool
 }
 #[derive(Debug)]
 pub struct HttpRequest {
@@ -38,23 +42,23 @@ impl RequestMatchResult<'_>{
         (self.request_handler)(self)
     }
 }
-
 impl WebClient {
-    pub fn listen(&self) -> (){
+    pub fn listen(self: Arc<Self>) -> (){
         println!("Listening for connections on {}", self.tcp_listener.local_addr().unwrap());
-        loop {
-            let input = self.tcp_listener.accept();
-            match input {
-                Ok((mut _socket,addr)) => {
-                    println!("New connection from: {}", addr);
-                    self.handle_connection(_socket);
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                    break;
+            for input in self.tcp_listener.incoming() {
+                match input {
+                    Ok(_socket) => {
+                        let client = self.clone();
+                        self.thread_pool.execute(move||{
+                            client.handle_connection(_socket);
+                        })
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        break;
+                    }
                 }
             }
-        }
     }
 
     fn handle_connection(&self, mut tcp_stream: TcpStream) {
@@ -68,7 +72,7 @@ impl WebClient {
                println!("Error: {}", e);
                tcp_stream.write(b"HTTP/1.1 400 Bad Request \r\n\r\n").ok();
            }
-       }
+        }
     }
 
     fn parse_request(&self, stream: &mut TcpStream) -> Result<HttpRequest, io::Error> {
@@ -180,6 +184,8 @@ impl WebClient {
 pub struct WebClientBuilder {
     port: Option<u16>,
     url: Option<String>,
+    backlog: i32,
+    threads: u32,
     handlers: HashMap<String, RequestHandler>,
     route_tree: RouteTree,
 }
@@ -189,6 +195,8 @@ impl WebClientBuilder {
         WebClientBuilder {
             port: None,
             url: None,
+            backlog: 200,
+            threads: 4,
             handlers: HashMap::new(),
             route_tree: RouteTree::new("","")
         }
@@ -201,19 +209,56 @@ impl WebClientBuilder {
         self.url = Some(url.to_string());
         self
     }
-    pub fn build(self) -> Result<WebClient, std::io::Error> {
-        let address = format!(
-            "{}:{}",
-            self.url.as_ref().unwrap_or( &"127.0.0.1".to_string()),
-            self.port.unwrap_or(0)
-        );
-        match TcpListener::bind(address) {
-            Ok(tcp_listener) => Ok(WebClient{ tcp_listener,
-                handlers: self.handlers,
-                route_tree: self.route_tree
-            }),
-            Err(e) => Err(e),
-        }
+    pub fn backlog(mut self, backlog: i32) -> WebClientBuilder {
+        self.backlog = backlog;
+        self
+    }
+    pub fn threads(mut self, threads: u32) -> WebClientBuilder {
+        self.threads = threads;
+        self
+    }
+    pub fn build(self) -> Result<Arc<WebClient>, std::io::Error> {
+        // let address = format!(
+        //     "{}:{}",
+        //     self.url.as_ref().unwrap_or( &"127.0.0.1".to_string()),
+        //     self.port.unwrap_or(0)
+        // );
+        let socket = Socket::new(Domain::IPV4, Type::STREAM, None)?;
+        let address: SocketAddr = format!(
+                "{}:{}",
+                self.url.as_ref().unwrap_or( &"127.0.0.1".to_string()),
+                self.port.unwrap_or(0)
+            ).parse().unwrap();
+        let address = address.into();
+        // match TcpListener::bind(address) {
+        socket.bind(&address)?;
+        socket.listen(self.backlog)?;
+        socket.set_tcp_nodelay(true)?;
+        // let tcp_listener = socket.into();
+        // match TcpListener::bind(address) {
+        //     Ok(tcp_listener) => Ok(Arc::new(WebClient{
+        //         tcp_listener,
+        //         handlers: self.handlers,
+        //         route_tree: self.route_tree,
+        //         thread_pool:ThreadPool::new(8)
+        //     })),
+        //     Err(e) => Err(e),
+        // }
+        // match socket.bind(&address) {
+        //     Ok(_) =>Ok(WebClient{
+        //         tcp_listener:socket.into(),
+        //         handlers: self.handlers,
+        //         route_tree: self.route_tree,
+        //     }),
+        //     Err(e) => Err(e),
+        // }
+
+        Ok(Arc::new(WebClient{
+            tcp_listener:socket.into(),
+            handlers: self.handlers,
+            route_tree: self.route_tree,
+            thread_pool: ThreadPool::new(self.threads),
+        }))
     }
     pub fn route(mut self, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
         if self.handlers.contains_key(path) {
