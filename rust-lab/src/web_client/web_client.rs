@@ -5,6 +5,8 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
 use socket2::{Domain, Socket, Type};
 use crate::web_client::enums::{PathType, RequestHandler};
+use crate::web_client::utils::fog::fog;
+use crate::web_client::utils::fog::fog::log;
 use crate::web_client::utils::thread_pool::ThreadPool;
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use crate::web_client::utils::web::route_tree::RouteTree;
@@ -64,7 +66,8 @@ impl WebClient {
     fn handle_connection(&self, mut tcp_stream: TcpStream) {
        match self.parse_request(&mut tcp_stream) {
            Ok(request) =>{
-               println!("{} {} {}",request.method,request.path,request.version);
+               // println!("{} {} {}",request.method,request.path,request.version );
+               log(format!("{} {} {}",request.method, request.path, request.version));
                let response = self.route_request(request);
                tcp_stream.write(response.build().as_bytes()).expect("TODO: panic message");
            },
@@ -137,7 +140,8 @@ impl WebClient {
                     }
                 },
                 Err(e)=>{
-                    println!("Error: {}", e);
+                    // println!("Error: {}", e);
+                    log(format!("Error: {}", e));
                     HttpResponse{
                         http_version: String::from("HTTP/1.1"),
                         status_code: 500,
@@ -218,11 +222,7 @@ impl WebClientBuilder {
         self
     }
     pub fn build(self) -> Result<Arc<WebClient>, std::io::Error> {
-        // let address = format!(
-        //     "{}:{}",
-        //     self.url.as_ref().unwrap_or( &"127.0.0.1".to_string()),
-        //     self.port.unwrap_or(0)
-        // );
+        fog::init();
         let socket = Socket::new(Domain::IPV4, Type::STREAM, None)?;
         let address: SocketAddr = format!(
                 "{}:{}",
@@ -230,29 +230,9 @@ impl WebClientBuilder {
                 self.port.unwrap_or(0)
             ).parse().unwrap();
         let address = address.into();
-        // match TcpListener::bind(address) {
         socket.bind(&address)?;
         socket.listen(self.backlog)?;
         socket.set_tcp_nodelay(true)?;
-        // let tcp_listener = socket.into();
-        // match TcpListener::bind(address) {
-        //     Ok(tcp_listener) => Ok(Arc::new(WebClient{
-        //         tcp_listener,
-        //         handlers: self.handlers,
-        //         route_tree: self.route_tree,
-        //         thread_pool:ThreadPool::new(8)
-        //     })),
-        //     Err(e) => Err(e),
-        // }
-        // match socket.bind(&address) {
-        //     Ok(_) =>Ok(WebClient{
-        //         tcp_listener:socket.into(),
-        //         handlers: self.handlers,
-        //         route_tree: self.route_tree,
-        //     }),
-        //     Err(e) => Err(e),
-        // }
-
         Ok(Arc::new(WebClient{
             tcp_listener:socket.into(),
             handlers: self.handlers,
