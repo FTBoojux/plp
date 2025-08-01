@@ -1,5 +1,6 @@
 package org.example.web;
 
+import org.example.utils.Fog;
 import org.example.web.exceptions.DuplicatedUrlException;
 import org.example.web.exceptions.InvalidParamsException;
 import org.example.web.exceptions.PortUsedException;
@@ -85,7 +86,7 @@ public class WebClient {
                 try {
                     handleRequest(accept);
                 } catch (IOException e) {
-                    System.out.println(e.getMessage());
+                    Fog.FOGGER.log(e.getMessage());
                 }
             });
         }
@@ -102,7 +103,7 @@ public class WebClient {
                 lines.add(line);
             }
             HttpRequest request = convertToRequest(lines);
-            System.out.println(request);
+            Fog.FOGGER.log(request);
             MatchResult matchResult = findRequestHandler(request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
             if(matchResult == null || matchResult.requestHandler == null){
@@ -147,7 +148,6 @@ public class WebClient {
     }
 
     private HttpRequest convertToRequest(List<String> requestLines) {
-        System.out.println(requestLines);
         HttpRequest objectHttpRequest = new HttpRequest<>();
         String first = requestLines.getFirst();
         String[] firstLine = first.split(" ");
