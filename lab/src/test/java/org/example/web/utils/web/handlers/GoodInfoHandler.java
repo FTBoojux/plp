@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class GoodInfoHandler implements RequestHandler<HashMap<String,String>> {
     @Override
-    public Object get(HttpRequest<HashMap<String, String>> httpRequest) {
+    public Object doHandle(HttpRequest<HashMap<String, String>> httpRequest) {
         String goodId = httpRequest.getPathVariables().getOrDefault("goodId", "");
         return "goodId:" + goodId;
     }

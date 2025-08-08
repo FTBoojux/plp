@@ -39,6 +39,7 @@ public class RouteTree {
     private final Map<String, RouteTree> staticRoutes;
 
     private final Map<String, RouteTree> dynamicRoutes;
+    private Map<String,RequestHandler> requestHandler;
 
     public Map<String, RouteTree> getDynamicRoutes() {
         return dynamicRoutes;
@@ -53,7 +54,6 @@ public class RouteTree {
     }
 
 
-    private RequestHandler requestHandler;
     @Deprecated
     public RouteTree(String segment){
         this.staticRoutes = new HashMap<>();
@@ -66,14 +66,14 @@ public class RouteTree {
         this.staticRoutes = new HashMap<>();
         this.dynamicRoutes = new HashMap<>();
         this.path = path;
-        this.requestHandler = null;
+        this.requestHandler = new HashMap<>();
         this.isWildcard = wildcard;
     }
     private RouteTree(String segment, String path){
         this.path = path;
         this.staticRoutes = new HashMap<>();
         this.dynamicRoutes = new HashMap<>();
-        this.requestHandler = null;
+        this.requestHandler = new HashMap<>();
         this.isWildcard = false;
     }
     public static RouteTree parse(String path){
@@ -84,10 +84,13 @@ public class RouteTree {
         return staticRoutes;
     }
 
-    public RequestHandler getRequestHandler() {
+    public Map<String,RequestHandler> getRequestHandler() {
         return requestHandler;
     }
-    public void setRequestHandler(RequestHandler requestHandler) {
+    public RequestHandler getRequestHandler(String type){
+        return requestHandler.get(type);
+    }
+    public void setRequestHandler(Map<String,RequestHandler> requestHandler) {
         this.requestHandler = requestHandler;
     }
     /**
@@ -115,12 +118,17 @@ public class RouteTree {
                 routes.put(segment, new RouteTree(segment,segments.get(i).second));
             }
             if(i+1 == segments.size()){
-                routes.get(segment).setRequestHandler(route.getRequestHandler());
+                routes.get(segment).addHandler(route.getRequestHandler());
                 return;
             }
             node = routes.get(segment);
         }
     }
+
+    private void addHandler(RequestHandler requestHandler) {
+        this.requestHandler.put(requestHandler.getType(), requestHandler);
+    }
+
     public RouteTree find(String path){
         String[] split = path.split("/");
         List<String> segments = Arrays.asList(split);
@@ -158,7 +166,7 @@ public class RouteTree {
         return null;
     }
 
-    public MatchResult findWithVariable(String path){
+    public MatchResult findWithVariable(String type,String path){
         String[] split = path.split("/");
         Queue<MatchCandidate> queue = new ArrayDeque<>();
         queue.add(new MatchCandidate(this, new HashMap<>()));
@@ -171,7 +179,7 @@ public class RouteTree {
                     nextLevel.add(new MatchCandidate(routeTree, new HashMap<>(candidate.getPathVariables())));
                 }
                 Collection<RouteTree> values = candidate.getNode().dynamicRoutes.values();
-                if (values != null && !values.isEmpty()) {
+                if (!values.isEmpty()) {
                     for (RouteTree value : values) {
                         Map<String, String> pathVariables = new HashMap<>(candidate.getPathVariables());
                         pathVariables.put(value.path, segment);
@@ -183,7 +191,8 @@ public class RouteTree {
         }
         for (MatchCandidate matchCandidate : queue) {
             if(matchCandidate.getNode().getRequestHandler() != null){
-                return new MatchResult(matchCandidate.getNode().getRequestHandler(), matchCandidate.getPathVariables());
+                // add type here
+                return new MatchResult(matchCandidate.getNode().getRequestHandler(type), matchCandidate.getPathVariables());
             }
         }
         return null;

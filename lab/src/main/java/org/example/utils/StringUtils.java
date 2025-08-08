@@ -50,4 +50,10 @@ public final class StringUtils {
         }
         return str1.equals(str2);
     }
+    public static boolean isEmpty(String str){
+        if(str == null){
+            return true;
+        }
+        return str.isEmpty();
+    }
 }

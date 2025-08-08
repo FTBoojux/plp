@@ -20,3 +20,9 @@ introduce thread pool to handle the request instead of handling the request in t
 introduce asynchronous log printing
 
 [细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250801.asynchronousLogPrint.md)
+
+### 2025-08-07
+引入JSON序列化和Request Body的自动转换
+
+introduce JSON parser and request body parser
+

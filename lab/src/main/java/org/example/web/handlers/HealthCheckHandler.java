@@ -8,7 +8,7 @@ import java.util.HashMap;
 public class HealthCheckHandler implements RequestHandler<HashMap<String,String>> {
 
     @Override
-    public Object get(HttpRequest<HashMap<String, String>> request) {
+    public Object doHandle(HttpRequest<HashMap<String, String>> request) {
         return "OK!";
     }
 

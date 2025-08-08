@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class UserSpaceHandler implements RequestHandler<HashMap<String,String>> {
     @Override
-    public Object get(HttpRequest<HashMap<String, String>> httpRequest) {
+    public Object doHandle(HttpRequest<HashMap<String, String>> httpRequest) {
         String username = httpRequest.getPathVariables().getOrDefault("username", "");
         return "username=" + username;
     }

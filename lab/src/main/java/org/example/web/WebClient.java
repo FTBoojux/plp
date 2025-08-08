@@ -1,21 +1,24 @@
 package org.example.web;
 
 import org.example.utils.Fog;
-import org.example.web.exceptions.DuplicatedUrlException;
-import org.example.web.exceptions.InvalidParamsException;
-import org.example.web.exceptions.PortUsedException;
-import org.example.web.exceptions.SocketCloseFailException;
+import org.example.utils.StringUtils;
+import org.example.web.exceptions.*;
 import org.example.web.request.HttpRequest;
+import org.example.web.utils.Pair;
 import org.example.web.utils.http.HttpResponseBuilder;
+import org.example.web.utils.json.Bson;
+import org.example.web.utils.json.TypeReference;
 import org.example.web.utils.web.MatchResult;
 import org.example.web.utils.web.PathType;
 import org.example.web.utils.web.RoutePattern;
 import org.example.web.utils.web.RouteTree;
 
 import java.io.*;
-import java.net.InetSocketAddress;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,13 +26,13 @@ import java.util.concurrent.Executors;
 public class WebClient {
     private static final String BLANK_STRING = "";
 
-    private Map<String, RequestHandler> handlers;
+    private Map<String, Map<String,RequestHandler>> handlers;
 
     private RouteTree routeTree;
     private ServerSocket socket;
     private int port;
     private int backLog = 200;
-
+    private static final Bson bson = new Bson();
 
     private ExecutorService threadPool;
     public ExecutorService getThreadPool() {
@@ -39,7 +42,7 @@ public class WebClient {
     public void setThreadPool(ExecutorService threadPool) {
         this.threadPool = threadPool;
     }
-    private void setHandlers(Map<String, RequestHandler> handlers) {
+    private void setHandlers(Map<String, Map<String,RequestHandler>> handlers) {
         this.handlers = handlers;
     }
     public RouteTree getRouteTree() {
@@ -70,7 +73,9 @@ public class WebClient {
         }
         RoutePattern parse = RoutePattern.parse(handler.getUrl());
         if(parse.getPathType() == PathType.STATIC){
-            this.handlers.put(handler.getUrl(), handler);
+            Map<String, RequestHandler> handlerMap = this.handlers.getOrDefault(handler.getUrl(), new HashMap<>());
+            handlerMap.put(handler.getType(), handler);
+            this.handlers.put(handler.getUrl(),handlerMap);
         }else{
             parse.setRequestHandler(handler);
             this.routeTree.addRoute(parse);
@@ -82,10 +87,12 @@ public class WebClient {
         System.out.println("listen on port:" + this.port);
         while(true){
             Socket accept = socket.accept();
+            // TODO: 增加默认的超时限制
             threadPool.execute(()->{
                 try {
                     handleRequest(accept);
                 } catch (IOException e) {
+                    // TODO: 增加自定义异常处理
                     Fog.FOGGER.log(e.getMessage());
                 }
             });
@@ -96,29 +103,66 @@ public class WebClient {
         OutputStream outputStream = accept.getOutputStream();
         try{
             InputStream inputStream = accept.getInputStream();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             String line;
             List<String> lines = new ArrayList<>();
-            while((line = bufferedReader.readLine()) != null && !line.isEmpty()){
+            while((line = readLine(inputStream)) != null){
                 lines.add(line);
+                if (line.isBlank()){
+                    break;
+                }
             }
-            HttpRequest request = convertToRequest(lines);
+            HttpRequest<Object> request = convertToRequest(lines);
+            HashMap<String, String> headers = request.getHeaders();
+            String number = headers.getOrDefault("Content-Length", "0");
+            int contentLength = Integer.parseInt(number);
+            String rawBody = null;
+            if(contentLength > 0){
+                byte[] bodyBytes = new byte[contentLength];
+                int totalBytes = 0;
+                while (totalBytes < contentLength){
+                    int read = inputStream.read(bodyBytes, totalBytes, contentLength - totalBytes);
+                    if(read == -1){
+                        throw new InvalidRequestBodyException("Unexpected end of stream!");
+                    }
+                    totalBytes += read;
+                }
+                rawBody = new String(bodyBytes, StandardCharsets.UTF_8);
+                request.setBody(rawBody);
+            }
             Fog.FOGGER.log(request);
-            MatchResult matchResult = findRequestHandler(request.getPath());
+            MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
             if(matchResult == null || matchResult.requestHandler == null){
                 String notFound = new HttpResponseBuilder()
                         .statusCode(404)
                         .reasonPhrase("Not Found")
+                        .body("404 Not Found")
                         .build();
                 outputStream.write(notFound.getBytes());
             }else{
                 request.setPathVariables(matchResult.pathVariables);
-                Object object = matchResult.requestHandler.get(request);
-                String response = new HttpResponseBuilder()
+//                if (!StringUtils.isEmpty(rawBody)){
+//                    Object deserialize = bson.deserialize(rawBody, HashMap.class);
+//                    request.setBody(deserialize);
+//                }
+                // TODO: 在注册时就将这些requestClz的数据缓存，这样就不用每次都获取
+                RequestHandler requestHandler = matchResult.requestHandler;
+                Class<?> requestClz = getRequestClass(requestHandler);
+                if(requestClz != Void.class){
+                    Object requestBody = Bson.deserialize(rawBody, new TypeReference(requestClz));
+                    request.setBody(requestBody);
+                }
+                Object responseBody = requestHandler.doHandle(request);
+                HttpResponseBuilder responseBuilder = new HttpResponseBuilder()
                         .statusCode(200)
-                        .reasonPhrase("OK")
-                        .body(object.toString())
+                        .reasonPhrase("OK");
+                if(!Objects.isNull(responseBody)){
+                    responseBuilder.body(responseBody.toString());
+                }else{
+                    responseBuilder.body("");
+                }
+                String response =
+                        responseBuilder
                         .build();
                 outputStream.write(response.getBytes());
             }
@@ -138,12 +182,81 @@ public class WebClient {
         }
     }
 
-    private MatchResult findRequestHandler(String path) {
-        RequestHandler requestHandler = this.handlers.get(path);
+    private static Class<?> getRequestClass(RequestHandler requestHandler) {
+        Class<?> requestClz = Void.class;
+        Type[] requestInterfaces = requestHandler.getClass().getGenericInterfaces();
+        for (Type requestInterface : requestInterfaces) {
+            if (requestInterface instanceof ParameterizedType){
+                ParameterizedType parameterizedType = (ParameterizedType) requestInterface;
+                if (parameterizedType.getRawType() == RequestHandler.class){
+                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                    if(actualTypeArguments.length > 0){
+                        requestClz = (Class<?>) actualTypeArguments[0];
+                    }
+                }
+            }
+        }
+        return requestClz;
+    }
+
+    private String readLine(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream();
+        int previousByte = -1;
+        int currentByte;
+        while ((currentByte = inputStream.read()) != -1){
+            if(previousByte == '\r' && currentByte == '\n'){
+                return lineBuffer.toString(StandardCharsets.UTF_8);
+            }
+            lineBuffer.write(currentByte);
+            previousByte = currentByte;
+        }
+        if (lineBuffer.size() > 0){
+            return lineBuffer.toString(StandardCharsets.UTF_8);
+        }
+        return null;
+    }
+
+    public HashMap<String, String> parseBody(char[] bodyChars) {
+        String rawBody = new String(bodyChars);
+        if(!rawBody.startsWith("{") || !rawBody.endsWith("}")){
+            throw new InvalidRequestBodyException("Invalid request body:"+rawBody);
+        }
+        rawBody = rawBody.substring(1,rawBody.length()-1);
+        String[] pairStrings = rawBody.split(",");
+        HashMap<String, String> requestBody = new HashMap<>();
+        for (String pairString : pairStrings) {
+            Pair<String, String> pair = formatPairArr(pairString);
+            if(Objects.nonNull(pair)){
+                requestBody.put(pair.first, pair.second);
+            }
+        }
+        return requestBody;
+    }
+
+    private Pair<String, String> formatPairArr(String pairString) {
+        if(StringUtils.isEmpty(pairString)){
+            return null;
+        }
+        String[] pair = pairString.split(":");
+        String key = pair.length > 0 ? pair[0].trim() : "";
+        String value = pair.length > 1 ? pair[1].trim() : "";
+        if(!key.startsWith("\"") || !key.endsWith("\"")){
+            throw new InvalidRequestBodyException("Uncompleted request body! key = " + key);
+        }
+        if(!value.startsWith("\"") || !value.endsWith("\"")){
+            throw new InvalidRequestBodyException("Uncompleted request body! value = " + key);
+        }
+        key = key.substring(1,key.length()-1);
+        value = value.substring(1,value.length()-1);
+        return new Pair<>(key, value);
+    }
+
+    private MatchResult findRequestHandler(String type,String path) {
+        RequestHandler requestHandler = this.handlers.get(path).get(type);
         if(requestHandler != null){
             return new MatchResult(requestHandler, new HashMap<>(0));
         }else{
-            return this.routeTree.findWithVariable(path);
+            return this.routeTree.findWithVariable(type,path);
         }
     }
 
@@ -180,7 +293,7 @@ public class WebClient {
                 blankIndex = i;
                 break;
             }else{
-                String[] split = trim.split(":");
+                String[] split = trim.split(": ");
                 headers.put(split[0], split[1]);
             }
         }

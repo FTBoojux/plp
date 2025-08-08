@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class QuestionParamHandler implements RequestHandler<HashMap<String, String>> {
     @Override
-    public Object get(HttpRequest<HashMap<String, String>> httpRequest) {
+    public Object doHandle(HttpRequest<HashMap<String, String>> httpRequest) {
         HashMap<String, String> params = httpRequest.getParams();
         return "receive params: " + params.toString();
     }
