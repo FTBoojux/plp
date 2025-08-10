@@ -14,6 +14,11 @@ pub fn path_variable(http_request:&RequestMatchResult) -> Result<String,std::io:
     Ok(format!("name: {}", map.get("name").unwrap_or(&"0".to_string())))
 }
 
+pub fn path_variable_2(http_request:&RequestMatchResult) -> Result<String,std::io::Error> {
+    let map = &http_request.path_variables;
+    Ok(format!("name: {}", map.get("name2").unwrap_or(&"0".to_string())))
+}
+
 pub fn another_path_variable(http_request:&RequestMatchResult) -> Result<String,std::io::Error> {
     let map = &http_request.path_variables;
     Ok(format!("id: {}", map.get("id").unwrap_or(&"0".to_string())))

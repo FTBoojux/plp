@@ -25,24 +25,19 @@ public class JsonParser {
     private Object parseValue() {
         skipWhitespace();
         char c = this.json.charAt(this.index);
-        switch (c) {
-            case '{':
-                return parseObject();
-            case '[':
-                return parseArray();
-            case '"':
-                return parseString();
-            case 't':
-            case 'f':
-                return parseBoolean();
-            case 'n':
-                return parseNull();
-            default:
+        return switch (c) {
+            case '{' -> parseObject();
+            case '[' -> parseArray();
+            case '"' -> parseString();
+            case 't', 'f' -> parseBoolean();
+            case 'n' -> parseNull();
+            default -> {
                 if (c == '-' || Character.isDigit(c)) {
-                    return parseNumber();
+                    yield parseNumber();
                 }
                 throw new InvalidRequestBodyException("Unknown character: " + c);
-        }
+            }
+        };
     }
 
     private Number parseNumber() {
