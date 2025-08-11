@@ -2,7 +2,7 @@ package org.example.json;
 
 import framework.FTest;
 import framework.SimpleTestRunner;
-import org.example.web.utils.json.JsonParser;
+import org.example.utils.json.JsonParser;
 
 public class JsonParserTest {
     public static void main(String[] args) {

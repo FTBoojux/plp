@@ -1,4 +1,4 @@
-package org.example.web.utils.json;
+package org.example.utils.json;
 
 import org.example.web.exceptions.InvalidRequestBodyException;
 

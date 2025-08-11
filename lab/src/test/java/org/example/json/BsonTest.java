@@ -2,7 +2,7 @@ package org.example.json;
 
 import framework.FTest;
 import framework.SimpleTestRunner;
-import org.example.web.utils.json.Bson;
+import org.example.utils.json.Bson;
 
 public class BsonTest {
     public static void main(String[] args) {

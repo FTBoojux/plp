@@ -1,4 +1,4 @@
-package org.example.web.utils.json;
+package org.example.utils.json;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

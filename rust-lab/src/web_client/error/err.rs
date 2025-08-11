@@ -1,3 +1,5 @@
-pub enum Berror{
-    InvalidRequestBodyError(String)
+#[derive(Debug)]
+pub enum ParseError {
+    InvalidRequestBodyError(String),
+    InvalidParseBodyError(String),
 }
