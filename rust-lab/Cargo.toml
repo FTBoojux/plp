@@ -3,6 +3,10 @@ name = "rust-lab"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = ["json_derive"]
+
 [dependencies]
 log = "0.4.27"
 socket2 = "0.6.0"
+json_derive = {path = "json_derive"}

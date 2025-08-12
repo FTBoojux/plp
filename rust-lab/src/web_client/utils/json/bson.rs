@@ -1,7 +1,7 @@
-use crate::web_client::error::err::ParseError::{InvalidParseBodyError, InvalidRequestBodyError};
+use crate::web_client::error::err::ParseError;
+use crate::web_client::error::err::ParseError::InvalidParseBodyError;
 use std::collections::HashMap;
 use std::str::Chars;
-use crate::web_client::error::err::ParseError;
 
 #[derive(Debug, PartialEq)]
 enum JsonType {
@@ -18,6 +18,15 @@ struct JsonParser<'a> {
     index: u32,
     peek: Option<char>,
 }
+
+trait FromJson: Sized{
+    fn from_json(value: JsonType) -> Result<Self, String>;
+}
+
+trait FromJsonOption: Sized{
+    fn from_json_optional(value: Option<JsonType>) -> Result<Self, String>;
+}
+
 impl<'a> JsonParser<'a> {
     pub fn new(json_str: &'a str) -> Self {
         let mut chars = json_str.chars();
@@ -182,13 +191,12 @@ impl<'a> JsonParser<'a> {
         while self.peek().is_digit(10) {
             string.push(self.pop());
         }
-        let mut is_demical = self.peek() == '.';
-        if is_demical { string.push(self.pop()); }
+        let is_decimal = self.peek() == '.';
+        if is_decimal { string.push(self.pop()); }
         while self.peek().is_digit(10) {
             string.push(self.pop());
         }
         if self.peek() == 'e' || self.peek() == 'E' {
-            is_demical = true;
             string.push(self.pop());
             if self.peek() == '+' || self.peek() == '-' {
                 string.push(self.pop())
@@ -235,12 +243,72 @@ impl<'a> JsonParser<'a> {
     }
 }
 
+impl FromJson for String {
+    fn from_json(value: JsonType) -> Result<Self, String> {
+        match value {
+            JsonType::JString(string) => Ok(string),
+            _ => Err(format!("Expected String but got: {:?}", value))
+        }
+    }
+}
+
+impl FromJson for f64 {
+    fn from_json(value: JsonType) -> Result<Self, String> {
+        match value {
+            JsonType::Number(n) => Ok(n),
+            _ => Err(format!("Expected number but got: {:?}", value))
+        }
+    }
+}
+
+impl FromJson for bool {
+    fn from_json(value: JsonType) -> Result<Self, String> {
+        match value {
+            JsonType::Boolean(b) => Ok(b),
+            _ => Err(format!("Expected bool but got : {:?}", value))
+        }
+    }
+}
+impl<T: FromJson> FromJson for Vec<T> {
+    fn from_json(value: JsonType) -> Result<Self, String> {
+        match value {
+            JsonType::Array(array) => {
+                array.into_iter().map(
+                    T::from_json
+                ).collect::<Result<Vec<_>, String>>()
+            },
+            _ => Err(format!("Expected array but got : {:?}", value))
+        }
+    }
+}
+
+impl<T: FromJson> FromJson for Option<T> {
+    fn from_json(value: JsonType) -> Result<Self, String> {
+        match value {
+            JsonType::Null => Ok(None),
+            other => T::from_json(other).map(Some)
+        }
+    }
+}
+
+impl<T: FromJson> FromJsonOption for Option<T> {
+    fn from_json_optional(value: Option<JsonType>) -> Result<Self, String> {
+        match value {
+            // 缺省字段
+            // missing fields
+            None => Ok(None),
+            Some(JsonType::Null) => Ok(None),
+            Some(other) => T::from_json(other).map(Some)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests{
-    use crate::web_client::error::err::ParseError;
+    use crate::web_client::utils::json::bson::FromJsonOption;
+    use crate::web_client::utils::json::bson::FromJson;
     use crate::web_client::utils::json::bson::{JsonParser, JsonType};
-    use crate::web_client::utils::json::bson::JsonType::JString;
-
+    use json_derive::FromJson;
     #[test]
     fn convert_one_line_json_string() {
         let json_string = "
@@ -271,7 +339,7 @@ mod tests{
             "quantity": -10,
             "ratio": 1.2e-5,
             "nullable": null,
-            "na_me": "na_me",
+            "na_me": {"item":"item1"},
             "emoji": "❤"
             }
         "###;
@@ -285,5 +353,34 @@ mod tests{
                 println!("{:?}", err)
             }
         }
+    }
+    #[test]
+    fn using_from_json_macro(){
+        let string = r#"
+        {
+            "name": "Boojux",
+            "age": 24,
+            "address" : "Bake Street 2B",
+            "null_address" : null
+        }
+        "#;
+        let mut parser = JsonParser::new(string);
+        let result = parser.parse();
+        match result {
+            Ok(json_type) => {
+                let result1 = User::from_json(json_type);
+                println!("{:?}",result1)
+            }
+            Err(e) => {
+                println!("{:?}", e)
+            }
+        }
+    }
+    #[derive(FromJson, Debug)]
+    struct User{
+        name: String,
+        age: f64,
+        address: String,
+        null_address: Option<String>
     }
 }

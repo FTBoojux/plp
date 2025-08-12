@@ -125,19 +125,19 @@ mod test{
     #[test]
     pub fn match_path_and_variable(){
         let mut route_tree = RouteTree::new("", "");
-        let mut pattern1 = RoutePattern::parse("/{pathVariable1}/{pathVariable2}/path", Box::new(health_check));
+        let pattern1 = RoutePattern::parse("/{pathVariable1}/{pathVariable2}/path", Box::new(health_check));
         // pattern1.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern1);
 
-        let mut pattern2 = RoutePattern::parse("/{pathVariable}/path", Box::new(health_check));
+        let pattern2 = RoutePattern::parse("/{pathVariable}/path", Box::new(health_check));
         // pattern2.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern2);
 
-        let mut pattern3 = RoutePattern::parse("/path/{pathVariable}", Box::new(health_check));
+        let pattern3 = RoutePattern::parse("/path/{pathVariable}", Box::new(health_check));
         // pattern3.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern3);
 
-        let mut pattern4 = RoutePattern::parse("/{pathVariable1}/path/{pathVariable2}/path", Box::new(health_check));
+        let pattern4 = RoutePattern::parse("/{pathVariable1}/path/{pathVariable2}/path", Box::new(health_check));
         // pattern4.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern4);
 
