@@ -25,18 +25,20 @@ impl Debug for MatchResult<'_> {
 pub struct RouteTree{
     segment: String,
     path: String,
+    method: String,
     static_routes: HashMap<String, RouteTree>,
     dynamic_routes: HashMap<String, RouteTree>,
     request_handler: Option<RequestHandler>
 }
 
 impl RouteTree{
-    pub fn new(segment: &str, path: &str) -> RouteTree{
+    pub fn new(segment: &str, path: &str, method: &str) -> RouteTree{
         RouteTree{
             segment: segment.to_string(),
             static_routes: HashMap::new(),
             dynamic_routes: HashMap::new(),
             path: path.to_string(),
+            method: method.to_string(),
             request_handler: None
         }
     }
@@ -49,17 +51,17 @@ impl RouteTree{
             let next_level = if is_wildcard {&mut node.dynamic_routes} else { &mut node.static_routes };
             let _segment = if is_wildcard { segment.second.clone() } else { segment.first.clone() };
             if !next_level.contains_key(&_segment) {
-                next_level.insert(_segment.clone(),RouteTree::new(&segment.first, &segment.second));
+                next_level.insert(_segment.clone(),RouteTree::new(&segment.first, &segment.second,route.handler.first.as_str()));
             }
             if i+1 == segments.len() {
-                if let Some(handler) = route.handler.take(){
+                if let Some(handler) = route.handler.second.take(){
                     next_level.get_mut(&_segment).unwrap().request_handler = Some(handler);
                 }
             }
             node = next_level.get_mut(&_segment).unwrap();
         }
     }
-    pub fn find(&self, path: &str) -> Option<MatchResult> {
+    pub fn find(&self, http_type:&str,path: &str) -> Option<MatchResult> {
         let segments:Vec<&str> = path.split("/").collect();
         let mut queue:VecDeque<MatchCandidate> = VecDeque::new();
         queue.push_back(MatchCandidate{
@@ -80,12 +82,15 @@ impl RouteTree{
                 let children:Vec<&RouteTree> = candidate.route_tree.dynamic_routes.values().collect();
                 if !children.is_empty() {
                     for child in children {
-                        let mut path_variables = candidate.path_variables.clone();
-                        path_variables.insert(child.path.clone(), segment.to_string());
-                        next_level.push_back(MatchCandidate{
-                            route_tree: child,
-                            path_variables,
-                        })
+                        if child.method.eq(http_type) {
+                            let mut path_variables = candidate.path_variables.clone();
+                            path_variables.insert(child.path.clone(), segment.to_string());
+                            next_level.push_back(MatchCandidate{
+                                route_tree: child,
+                                path_variables,
+                            })
+                        }
+
                     }
                 }
             }
@@ -94,7 +99,7 @@ impl RouteTree{
         while !queue.is_empty() {
             let candidate = queue.pop_front().unwrap();
             let handler = &candidate.route_tree.request_handler;
-            if let Some(handler) = handler {
+            if let Some(handler) = handler  {
                 let option = Some(MatchResult {
                     request_handler: handler,
                     path_variables: candidate.path_variables.clone(),
@@ -124,39 +129,39 @@ mod test{
 
     #[test]
     pub fn match_path_and_variable(){
-        let mut route_tree = RouteTree::new("", "");
-        let pattern1 = RoutePattern::parse("/{pathVariable1}/{pathVariable2}/path", Box::new(health_check));
+        let mut route_tree = RouteTree::new("", "","");
+        let pattern1 = RoutePattern::parse("GET","/{pathVariable1}/{pathVariable2}/path", Box::new(health_check));
         // pattern1.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern1);
 
-        let pattern2 = RoutePattern::parse("/{pathVariable}/path", Box::new(health_check));
+        let pattern2 = RoutePattern::parse("GET","/{pathVariable}/path", Box::new(health_check));
         // pattern2.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern2);
 
-        let pattern3 = RoutePattern::parse("/path/{pathVariable}", Box::new(health_check));
+        let pattern3 = RoutePattern::parse("GET","/path/{pathVariable}", Box::new(health_check));
         // pattern3.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern3);
 
-        let pattern4 = RoutePattern::parse("/{pathVariable1}/path/{pathVariable2}/path", Box::new(health_check));
+        let pattern4 = RoutePattern::parse("GET","/{pathVariable1}/path/{pathVariable2}/path", Box::new(health_check));
         // pattern4.handler = Some(Box::new(health_check));
         route_tree.add_route(pattern4);
 
-        let option = route_tree.find("/1/2/path");
+        let option = route_tree.find("GET","/1/2/path");
         assert!(option.is_some());
         let option = option.unwrap();
         println!("{:?}", option);
 
-        let option = route_tree.find("/1/path");
+        let option = route_tree.find("GET","/1/path");
         assert!(option.is_some());
         let option = option.unwrap();
         println!("{:?}", option);
 
-        let option = route_tree.find("/path/1");
+        let option = route_tree.find("GET","/path/1");
         assert!(option.is_some());
         let option = option.unwrap();
         println!("{:?}", option);
 
-        let option = route_tree.find("/path/path/path/path");
+        let option = route_tree.find("GET","/path/path/path/path");
         assert!(option.is_some());
         let option = option.unwrap();
         println!("{:?}", option);

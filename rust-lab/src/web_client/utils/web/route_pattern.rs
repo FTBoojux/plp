@@ -6,7 +6,7 @@ pub struct RoutePattern {
     pub(crate) pattern: String,
     pub(crate) path_type: PathType,
     pub(crate) segments: Vec<Pair<String, String>>,
-    pub(crate) handler: Option<RequestHandler>,
+    pub(crate) handler: Pair<String,Option<RequestHandler>>,
 }
 
 impl RoutePattern {
@@ -15,10 +15,10 @@ impl RoutePattern {
             pattern: pattern.to_string(),
             path_type,
             segments,
-            handler: None,
+            handler: Pair::new("".to_string(),None),
         }
     }
-    pub fn parse(path: &str, handler: RequestHandler) -> RoutePattern {
+    pub fn parse(http_type:&str, path: &str, handler: RequestHandler) -> RoutePattern {
         let splits:Vec<&str> = path.split("/").collect();
         let mut segments: Vec<Pair<String, String>> = Vec::new();
         let mut variable_exists = false;
@@ -34,7 +34,7 @@ impl RoutePattern {
             pattern: path.to_string(),
             path_type: if variable_exists {DYNAMIC} else {STATIC},
             segments,
-            handler: Some(handler),
+            handler: Pair::new(http_type.to_string(), Some(handler)),
         }
     }
 }

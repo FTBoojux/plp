@@ -17,7 +17,7 @@ use crate::web_client::utils::web::route_tree::RouteTree;
 
 pub struct WebClient {
     tcp_listener: TcpListener,
-    handlers:  HashMap<String, RequestHandler>,
+    handlers:  HashMap<String, HashMap<String,RequestHandler>>,
     route_tree: RouteTree,
     thread_pool: ThreadPool
 }
@@ -211,24 +211,35 @@ impl WebClient {
 
     fn find_request_handler(&self, http_request: HttpRequest) -> Result<RequestMatchResult, std::io::ErrorKind> {
         let static_result = self.handlers.get(http_request.path.as_str());
-        if !static_result.is_none() {
-            return Ok(RequestMatchResult{
-                matched: true,
-                request: http_request,
-                request_handler: static_result.unwrap(),
-                path_variables: HashMap::new(),
-            })
-        }else  if let Some(route)= self.route_tree.find(http_request.path.as_str()) {
-            return Ok(
-                RequestMatchResult{
+        if static_result.is_some() {
+            if let Some(static_result) = static_result.unwrap().get(http_request.method.as_str()){
+                return Ok(RequestMatchResult{
+                    matched: true,
+                    request: http_request,
+                    request_handler: static_result,
+                    path_variables: HashMap::new(),
+                });
+            }
+        }
+        // if !static_result.is_none() {
+        //     Ok(RequestMatchResult{
+        //         matched: true,
+        //         request: http_request,
+        //         request_handler: static_result.unwrap(),
+        //         path_variables: HashMap::new(),
+        //     })
+        // }
+        if let Some(route) = self.route_tree.find(http_request.method.as_str(), http_request.path.as_str()) {
+            Ok(
+                RequestMatchResult {
                     matched: true,
                     request: http_request,
                     request_handler: route.request_handler,
                     path_variables: route.path_variables.clone(),
                 }
             )
-        }else{
-            return Err(ErrorKind::NotFound)
+        } else {
+            Err(ErrorKind::NotFound)
         }
     }
 }
@@ -239,7 +250,7 @@ pub struct WebClientBuilder {
     url: Option<String>,
     backlog: i32,
     threads: u32,
-    handlers: HashMap<String, RequestHandler>,
+    handlers: HashMap<String, HashMap<String, RequestHandler>>,
     route_tree: RouteTree,
 }
 
@@ -251,7 +262,7 @@ impl WebClientBuilder {
             backlog: 200,
             threads: 4,
             handlers: HashMap::new(),
-            route_tree: RouteTree::new("","")
+            route_tree: RouteTree::new("","","")
         }
     }
     pub fn port(mut self, port: u16) -> WebClientBuilder {
@@ -289,14 +300,18 @@ impl WebClientBuilder {
             thread_pool: ThreadPool::new(self.threads),
         }))
     }
-    pub fn route(mut self, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
+    pub fn route(mut self, http_type: &str, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
         if self.handlers.contains_key(path) {
             return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists, format!("Handler already exists: {}", path)));
         }
-        let pattern = RoutePattern::parse(path, handler);
+        let pattern = RoutePattern::parse(http_type, path, handler);
         match pattern.path_type {
             PathType::STATIC => {
-                self.handlers.insert(path.to_string(), pattern.handler.unwrap());
+                // self.handlers.insert(path.to_string(), pattern.handler.second.unwrap());
+                if !self.handlers.contains_key(path) {
+                    self.handlers.insert(path.to_string(),HashMap::new());
+                }
+                self.handlers.get_mut(path).unwrap().insert(http_type.to_string(), pattern.handler.second.unwrap());
             }
             PathType::DYNAMIC => {
                 self.route_tree.add_route(pattern)
@@ -350,13 +365,13 @@ mod link_test{
     use crate::web_client::web_client::*;
     #[test]
     pub fn add_handler_successfully(){
-        let client = WebClientBuilder::new().port(8000).route("health_check",Box::new(health_check)).unwrap();
+        let client = WebClientBuilder::new().port(8000).route("GET","health_check",Box::new(health_check)).unwrap();
     }
     #[test]
     pub fn add_handler_with_duplicated_url_should_fail(){
         let client = WebClientBuilder::new().port(8000)
-            .route("health_check",Box::new(health_check)).unwrap()
-            .route("health_check",Box::new(health_check))
+            .route("GET","health_check",Box::new(health_check)).unwrap()
+            .route("GET","health_check",Box::new(health_check))
             ;
         let mut failed = false;
         match client {
