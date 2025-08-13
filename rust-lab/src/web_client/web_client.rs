@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::io;
-use std::io::{BufRead, BufReader, ErrorKind, Read, Write};
+use std::io::{BufRead, BufReader, Error, ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::num::ParseIntError;
 use std::sync::Arc;
 use log::log;
 use socket2::{Domain, Socket, Type};
-use crate::web_client::enums::{PathType, RequestHandler};
+use crate::web_client::enums::{HttpMethod, PathType, RequestHandler};
 use crate::web_client::error::err::ParseError;
 use crate::web_client::utils::fog::fog;
 use crate::web_client::utils::fog::fog::log;
@@ -300,7 +300,7 @@ impl WebClientBuilder {
             thread_pool: ThreadPool::new(self.threads),
         }))
     }
-    pub fn route(mut self, http_type: &str, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
+    pub fn route0(mut self, http_type: &str, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
         if self.handlers.contains_key(path) {
             return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists, format!("Handler already exists: {}", path)));
         }
@@ -318,6 +318,9 @@ impl WebClientBuilder {
             }
         }
         Ok(self)
+    }
+    pub fn route(mut self, http_type: HttpMethod, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, Error> {
+        self.route0(http_type.value(), path, handler)
     }
 }
 
@@ -365,13 +368,13 @@ mod link_test{
     use crate::web_client::web_client::*;
     #[test]
     pub fn add_handler_successfully(){
-        let client = WebClientBuilder::new().port(8000).route("GET","health_check",Box::new(health_check)).unwrap();
+        let client = WebClientBuilder::new().port(8000).route0("GET", "health_check", Box::new(health_check)).unwrap();
     }
     #[test]
     pub fn add_handler_with_duplicated_url_should_fail(){
         let client = WebClientBuilder::new().port(8000)
-            .route("GET","health_check",Box::new(health_check)).unwrap()
-            .route("GET","health_check",Box::new(health_check))
+            .route0("GET", "health_check", Box::new(health_check)).unwrap()
+            .route0("GET", "health_check", Box::new(health_check))
             ;
         let mut failed = false;
         match client {

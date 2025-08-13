@@ -1,5 +1,6 @@
 mod test{
     use std::collections::{BTreeMap, HashMap};
+    use std::fmt::Debug;
     use std::sync::{Mutex, OnceLock, RwLock};
     use crate::web_client::utils::json::bson::FromJson;
     use crate::web_client::utils::json::bson::FromJsonOption;
@@ -8,7 +9,7 @@ mod test{
     use crate::web_client::health_check::{health_check, path_variable};
     use crate::web_client::utils::fog::fog::log;
     use crate::web_client::web_client::{HttpRequest, RequestMatchResult, WebClientBuilder};
-
+    use crate::web_client::enums::HttpMethod;
     #[derive(FromJson, Debug)]
     struct User{
         username: String,
@@ -31,7 +32,7 @@ mod test{
                 Ok(user) => {
                     if let Some(pass) = db().read().unwrap().get(user.username.as_str()){
                       if pass.eq(&user.password) {
-                          return Ok("You have logged in successfully!".to_string());
+                          return Ok("{\"msg\":\"You have logged in successfully!\"}".to_string());
                       }
                     };
                     Ok("Username or password is incorrect!".to_string())
@@ -48,13 +49,16 @@ mod test{
             .port(8000)
             .backlog(300)
             .threads(11)
-            .route("GET","/health",Box::new(health_check)).unwrap()
-            // .route("/page_query",Box::new(question_params)).unwrap()
-            .route("GET","/{name}/path",Box::new(path_variable)).unwrap()
-            // .route("/{id}/info",Box::new(another_path_variable)).unwrap()
-            .route("POST","/login",Box::new(login)).unwrap()
+            .route(HttpMethod::GET, "/health", Box::new(health_check)).unwrap()
+            .route(HttpMethod::GET, "/{name}/path", Box::new(path_variable)).unwrap()
+            .route(HttpMethod::POST, "/login", Box::new(login)).unwrap()
             .build()
             .unwrap().listen()
             ;
+    }
+    #[test]
+    fn test_http_enum(){
+        println!("{}", HttpMethod::GET.value());
+        println!("{:?}", "POST".eq(HttpMethod::POST.value()));
     }
 }

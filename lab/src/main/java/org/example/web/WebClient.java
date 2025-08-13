@@ -141,10 +141,6 @@ public class WebClient {
                 outputStream.write(notFound.getBytes());
             }else{
                 request.setPathVariables(matchResult.pathVariables);
-//                if (!StringUtils.isEmpty(rawBody)){
-//                    Object deserialize = bson.deserialize(rawBody, HashMap.class);
-//                    request.setBody(deserialize);
-//                }
                 // TODO: 在注册时就将这些requestClz的数据缓存，这样就不用每次都获取
                 RequestHandler requestHandler = matchResult.requestHandler;
                 Class<?> requestClz = getRequestClass(requestHandler);

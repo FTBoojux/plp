@@ -10,3 +10,31 @@ pub enum PathType{
 }
 
 pub static WILDCARD_STR: &'static str = "*";
+
+pub enum HttpMethod {
+    GET,
+    POST,
+    PUT,
+    PATCH,
+    DELETE,
+    HEAD,
+    OPTION,
+    TRACE,
+    CONNECT,
+}
+
+impl HttpMethod {
+    pub fn value(self) -> &'static str{
+        match self {
+            HttpMethod::GET => "GET",
+            HttpMethod::POST => "POST",
+            HttpMethod::PUT => "PUT",
+            HttpMethod::PATCH => "PATCH",
+            HttpMethod::DELETE => "DELETE",
+            HttpMethod::HEAD => "HEAD",
+            HttpMethod::OPTION => "OPTION",
+            HttpMethod::TRACE => "TRACE",
+            HttpMethod::CONNECT => "CONNECT",
+        }
+    }
+}
