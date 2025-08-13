@@ -2,11 +2,15 @@ use std::collections::HashMap;
 use std::io;
 use std::io::{BufRead, BufReader, ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::num::ParseIntError;
 use std::sync::Arc;
+use log::log;
 use socket2::{Domain, Socket, Type};
 use crate::web_client::enums::{PathType, RequestHandler};
+use crate::web_client::error::err::ParseError;
 use crate::web_client::utils::fog::fog;
 use crate::web_client::utils::fog::fog::log;
+use crate::web_client::utils::json::bson::{JsonParser, JsonType};
 use crate::web_client::utils::thread_pool::ThreadPool;
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use crate::web_client::utils::web::route_tree::RouteTree;
@@ -24,6 +28,7 @@ pub struct HttpRequest {
     version: String,
     pub headers: HashMap<String, String>,
     pub params: HashMap<String, String>,
+    pub request_body: Option<JsonType>,
 }
 pub struct RequestMatchResult<'a>{
     pub matched: bool,
@@ -40,7 +45,7 @@ struct HttpResponse {
 }
 
 impl RequestMatchResult<'_>{
-    pub fn handle(&self)->Result<String, std::io::Error>{
+    pub fn handle(self)->Result<String, std::io::Error>{
         (self.request_handler)(self)
     }
 }
@@ -68,6 +73,7 @@ impl WebClient {
            Ok(request) =>{
                // println!("{} {} {}",request.method,request.path,request.version );
                log(format!("{} {} {}",request.method, request.path, request.version));
+               log(format!("{:?}", request.request_body));
                let response = self.route_request(request);
                tcp_stream.write(response.build().as_bytes()).expect("TODO: panic message");
            },
@@ -116,6 +122,48 @@ impl WebClient {
             let value = if header.len() > 1 {header[1]} else {""};
             headers.insert(key.to_string(), value.to_string());
         });
+        let mut request_body = None;
+        if let Some(content_length) = headers.get("Content-Length") {
+            let parse = content_length.trim().parse::<usize>();
+            let json_type = match parse {
+                Ok(content_length) => {
+                    let mut v8: Vec<u8> = Vec::new();
+                    let mut u8:[u8;1024] = [0;1024];
+                    let mut read_length = 0;
+                    loop {
+                        if read_length >= content_length {
+                            break;
+                        }
+                        let length = buf_reader.read(&mut u8).expect("Faild to read the request body!");
+                        read_length += length;
+                        for ch in u8 {
+                            v8.push(ch);
+                        }
+                    }
+                    let body_string = String::from_utf8(v8).expect("Failed to convert the request body!");
+                    let mut parser = JsonParser::new(body_string.as_str());
+                    let json_type = match parser.parse() {
+                        Ok(res) => {
+                            Some(res)
+                        }
+                        Err(ParseError::InvalidParseBodyError(s)) => {
+                            log(s);
+                            None
+                        },
+                        Err(ParseError::InvalidRequestBodyError(s)) => {
+                            log(s);
+                            None
+                        }
+                    };
+                    json_type
+                }
+                Err(e) => {
+                    log(e.to_string());
+                    None
+                }
+            };
+            request_body = json_type;
+        }
         Ok(
             HttpRequest{
                 method,
@@ -123,6 +171,7 @@ impl WebClient {
                 params,
                 version,
                 headers,
+                request_body
             }
         )
     }

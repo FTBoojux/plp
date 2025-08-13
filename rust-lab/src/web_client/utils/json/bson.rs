@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::str::Chars;
 
 #[derive(Debug, PartialEq)]
-enum JsonType {
+pub enum JsonType {
     Number(f64),
     JString(String),
     Boolean(bool),
@@ -13,17 +13,17 @@ enum JsonType {
     Null,
 }
 
-struct JsonParser<'a> {
+pub struct JsonParser<'a> {
     json_it: Chars<'a>,
     index: u32,
     peek: Option<char>,
 }
 
-trait FromJson: Sized{
+pub trait FromJson: Sized{
     fn from_json(value: JsonType) -> Result<Self, String>;
 }
 
-trait FromJsonOption: Sized{
+pub trait FromJsonOption: Sized{
     fn from_json_optional(value: Option<JsonType>) -> Result<Self, String>;
 }
 
