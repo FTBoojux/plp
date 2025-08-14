@@ -6,14 +6,14 @@ import java.lang.reflect.*;
 import java.util.*;
 
 public class Bson {
-    public static <T> T deserialize(String json, Class<T> clz){
+    public static <T> T deserializeFromJson(String json, Class<T> clz){
         JsonParser jp = getJsonParser();
         Object obj = jp.parse(json);
         return (T) deserialize(obj, new TypeReference(clz));
     }
 
     //    private Object convertToType(Object obj, Type)
-    public static <T> T deserialize(String json, TypeReference typeReference) {
+    public static <T> T deserializeFromJson(String json, TypeReference typeReference) {
         JsonParser jp = getJsonParser();
         Object obj = jp.parse(json);
         return (T) deserialize(obj, typeReference);
@@ -40,7 +40,7 @@ public class Bson {
             return obj;
         } else if (clz == List.class) {
             return convertToList(obj, type);
-        } else if (clz == Map.class) {
+        } else if (Map.class.isAssignableFrom(clz)) {
             return convertToMap(obj, type);
         } else if (clz.isArray()) {
             return convertToArray(obj, clz.getComponentType());

@@ -20,18 +20,20 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class WebClient {
     private static final String BLANK_STRING = "";
 
     private Map<String, Map<String,RequestHandler>> handlers;
+    private Map<Class<?>, TypeReference> requestBodyClzMap;
 
     private RouteTree routeTree;
     private ServerSocket socket;
     private int port;
     private int backLog = 200;
+    private long timeout = 60;
+    private TimeUnit timeUnit = TimeUnit.SECONDS;
     private static final Bson bson = new Bson();
 
     private ExecutorService threadPool;
@@ -57,6 +59,7 @@ public class WebClient {
         webClient.setHandlers(new HashMap<>());
         webClient.setRouteTree(new RouteTree("",true));
         webClient.setThreadPool(Executors.newCachedThreadPool());
+        webClient.setRequestBodyClzMap(new HashMap<>());
         return webClient;
     }
     public WebClient bind(int port){
@@ -65,6 +68,11 @@ public class WebClient {
     }
     public WebClient backLog(int backLog){
         this.backLog = backLog;
+        return this;
+    }
+    public WebClient timeOut(long timeout, TimeUnit timeUnit) {
+        this.timeout = timeout;
+        this.timeUnit = timeUnit;
         return this;
     }
     public WebClient addHandler(RequestHandler handler){
@@ -80,6 +88,8 @@ public class WebClient {
             parse.setRequestHandler(handler);
             this.routeTree.addRoute(parse);
         }
+        TypeReference requestClass = getRequestClass(handler);
+        this.requestBodyClzMap.put(handler.getClass(), requestClass);
         return this;
     }
     public void listen() throws IOException {
@@ -87,18 +97,34 @@ public class WebClient {
         System.out.println("listen on port:" + this.port);
         while(true){
             Socket accept = socket.accept();
-            // TODO: 增加默认的超时限制
-            threadPool.execute(()->{
-                try {
-                    handleRequest(accept);
-                } catch (IOException e) {
-                    // TODO: 增加自定义异常处理
-                    Fog.FOGGER.log(e.getMessage());
-                }
-            });
+            CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
+                        try {
+                            handleRequest(accept);
+                        } catch (IOException e) {
+                            Fog.FOGGER.log(e.getMessage());
+                        }
+                    },
+                    threadPool
+            );
+            try {
+                completableFuture.get(this.timeout, this.timeUnit);
+            } catch (TimeoutException e) {
+                Fog.FOGGER.log("One request is canceled because of timeout!");
+                String timeout = new HttpResponseBuilder()
+                        .statusCode(408)
+                        .reasonPhrase("Server Timeout")
+                        .body("408 Request Timeout")
+                        .build();
+                accept.getOutputStream().write(timeout.getBytes());
+                accept.getOutputStream().flush();
+                accept.getOutputStream().close();
+                accept.close();
+                completableFuture.cancel(true);
+            } catch (ExecutionException | InterruptedException e) {
+                Fog.FOGGER.log(e.getMessage());
+            }
         }
     }
-
     private void handleRequest(Socket accept) throws IOException {
         OutputStream outputStream = accept.getOutputStream();
         try{
@@ -141,11 +167,10 @@ public class WebClient {
                 outputStream.write(notFound.getBytes());
             }else{
                 request.setPathVariables(matchResult.pathVariables);
-                // TODO: 在注册时就将这些requestClz的数据缓存，这样就不用每次都获取
                 RequestHandler requestHandler = matchResult.requestHandler;
-                Class<?> requestClz = getRequestClass(requestHandler);
-                if(requestClz != Void.class){
-                    Object requestBody = Bson.deserialize(rawBody, new TypeReference(requestClz));
+                TypeReference typeReference = this.requestBodyClzMap.get(requestHandler.getClass());
+                if(typeReference.getType() != Void.class && !StringUtils.isEmpty(rawBody)){
+                    Object requestBody = Bson.deserializeFromJson(rawBody, typeReference);
                     request.setBody(requestBody);
                 }
                 Object responseBody = requestHandler.doHandle(request);
@@ -178,8 +203,9 @@ public class WebClient {
         }
     }
 
-    private static Class<?> getRequestClass(RequestHandler requestHandler) {
-        Class<?> requestClz = Void.class;
+    private static TypeReference getRequestClass(RequestHandler requestHandler) {
+//        Class<?> requestClz = Void.class;
+        TypeReference typeReference = new TypeReference(Void.class);
         Type[] requestInterfaces = requestHandler.getClass().getGenericInterfaces();
         for (Type requestInterface : requestInterfaces) {
             if (requestInterface instanceof ParameterizedType){
@@ -187,12 +213,13 @@ public class WebClient {
                 if (parameterizedType.getRawType() == RequestHandler.class){
                     Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
                     if(actualTypeArguments.length > 0){
-                        requestClz = (Class<?>) actualTypeArguments[0];
+//                        requestClz = (Class<?>) actualTypeArguments[0];
+                        typeReference = new TypeReference(actualTypeArguments[0]);
                     }
                 }
             }
         }
-        return requestClz;
+        return typeReference;
     }
 
     private String readLine(InputStream inputStream) throws IOException {
@@ -248,7 +275,11 @@ public class WebClient {
     }
 
     private MatchResult findRequestHandler(String type,String path) {
-        RequestHandler requestHandler = this.handlers.get(path).get(type);
+        Map<String, RequestHandler> requestHandlerMap = this.handlers.get(path);
+        RequestHandler requestHandler = null;
+        if (requestHandlerMap != null){
+            requestHandler = requestHandlerMap.get(type);
+        }
         if(requestHandler != null){
             return new MatchResult(requestHandler, new HashMap<>(0));
         }else{
@@ -305,4 +336,11 @@ public class WebClient {
         }
     }
 
+    public Map<Class<?>, TypeReference> getRequestBodyClzMap() {
+        return requestBodyClzMap;
+    }
+
+    public void setRequestBodyClzMap(Map<Class<?>, TypeReference> requestBodyClzMap) {
+        this.requestBodyClzMap = requestBodyClzMap;
+    }
 }

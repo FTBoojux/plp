@@ -22,7 +22,7 @@ public class BsonTest {
 ]
 }}
                 """;
-        User deserialize = Bson.deserialize(json, User.class);
+        User deserialize = Bson.deserializeFromJson(json, User.class);
         System.out.println(deserialize);
     }
     @FTest
@@ -30,7 +30,7 @@ public class BsonTest {
         String json = """
 {"username":"Boojux","userId":"b001"}
                 """;
-        User deserialize = Bson.deserialize(json, User.class);
+        User deserialize = Bson.deserializeFromJson(json, User.class);
         System.out.println(deserialize);
     }
 }
