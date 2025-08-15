@@ -1,7 +1,9 @@
 package org.example.web.request;
 
+import GlobalEnums.StringEnums;
 import org.example.annotations.Nullable;
 import org.example.utils.CollectionUtils;
+import org.example.utils.StringUtils;
 import org.example.utils.json.Bson;
 import org.example.utils.json.JsonParser;
 import org.example.utils.json.TypeReference;
@@ -122,10 +124,7 @@ public class FormData {
         if (Objects.isNull(object)){
             return null;
         }
-        if (object instanceof Integer){
-            return Integer.parseInt(object.toString()) ;
-        }
-        throw new ClassCastException("Failed to cast to Integer for key : " + object);
+        return Integer.parseInt(object.toString()) ;
     }
     @Nullable
     public Boolean getBoolean(String key){
@@ -133,21 +132,37 @@ public class FormData {
         if (Objects.isNull(object)){
             return null;
         }
-        if (object instanceof Boolean){
-            return (Boolean) object;
+        if (StringUtils.equals(object.toString(), StringEnums.TRUE.getString())) {
+            return Boolean.TRUE;
+        }
+        if (StringUtils.equals(object.toString(), StringEnums.FALSE.getString())) {
+            return Boolean.FALSE;
         }
         throw new ClassCastException("Failed to cast to Boolean for key : " + object);
     }
     @Nullable
-    public Number getNumber(String key){
+    public Long getLong(String key){
         Object object = this.getFirstObject(key);
         if (Objects.isNull(object)) {
             return null;
         }
-        if (object instanceof Number) {
-            return (Number) object;
+        return Long.parseLong(object.toString());
+    }
+    @Nullable
+    public Double getDouble(String key) {
+        Object object = this.getFirstObject(key);
+        if (Objects.isNull(object)){
+            return null;
         }
-        throw new ClassCastException("Failed to cast to Number for key : " + object);
+        return Double.parseDouble(object.toString());
+    }
+    @Nullable
+    public Float getFloat(String key) {
+        Object object = this.getFirstObject(key);
+        if (Objects.isNull(object)){
+            return null;
+        }
+        return Float.parseFloat(object.toString());
     }
     @Nullable
     public MultipartFile getMultipartFile(String key){

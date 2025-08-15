@@ -1,7 +1,10 @@
 package GlobalEnums;
 
 public enum StringEnums {
-    WILDCARD("*");
+    WILDCARD("*"),
+    EMPTY(""),
+    TRUE("true"),
+    FALSE("false");
     private String string;
 
     StringEnums(String s) {

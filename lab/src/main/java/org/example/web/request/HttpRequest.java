@@ -9,6 +9,7 @@ public class HttpRequest<T> {
     private HashMap<String,String> headers;
     private HashMap<String,String> params;
     private HashMap<String,String> pathVariables;
+    private FormData formData;
     private T body;
 
     @Override
@@ -20,6 +21,7 @@ public class HttpRequest<T> {
                 ", headers=" + headers +
                 ", params=" + params +
                 ", pathVariables=" + pathVariables +
+                ", formData=" + formData +
                 ", body=" + body +
                 '}';
     }
@@ -81,4 +83,12 @@ public class HttpRequest<T> {
     public void setPathVariables(HashMap<String, String> pathVariables) {
         this.pathVariables = pathVariables;
     }
+
+    public FormData getFormData() {
+        return formData;
+    }
+    public void setFormData(FormData formData) {
+        this.formData = formData;
+    }
+
 }

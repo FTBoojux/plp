@@ -1,5 +1,6 @@
 package org.example.web;
 
+import org.example.enums.HTTPHeaders;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
@@ -138,23 +139,7 @@ public class WebClient {
                 }
             }
             HttpRequest<Object> request = convertToRequest(lines);
-            HashMap<String, String> headers = request.getHeaders();
-            String number = headers.getOrDefault("Content-Length", "0");
-            int contentLength = Integer.parseInt(number);
-            String rawBody = null;
-            if(contentLength > 0){
-                byte[] bodyBytes = new byte[contentLength];
-                int totalBytes = 0;
-                while (totalBytes < contentLength){
-                    int read = inputStream.read(bodyBytes, totalBytes, contentLength - totalBytes);
-                    if(read == -1){
-                        throw new InvalidRequestBodyException("Unexpected end of stream!");
-                    }
-                    totalBytes += read;
-                }
-                rawBody = new String(bodyBytes, StandardCharsets.UTF_8);
-                request.setBody(rawBody);
-            }
+            String rawBody = parseRequestBody(request, inputStream);
             Fog.FOGGER.log(request);
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
@@ -168,11 +153,8 @@ public class WebClient {
             }else{
                 request.setPathVariables(matchResult.pathVariables);
                 RequestHandler requestHandler = matchResult.requestHandler;
-                TypeReference typeReference = this.requestBodyClzMap.get(requestHandler.getClass());
-                if(typeReference.getType() != Void.class && !StringUtils.isEmpty(rawBody)){
-                    Object requestBody = Bson.deserializeFromJson(rawBody, typeReference);
-                    request.setBody(requestBody);
-                }
+
+                parseJsonBody(requestHandler, rawBody, request);
                 Object responseBody = requestHandler.doHandle(request);
                 HttpResponseBuilder responseBuilder = new HttpResponseBuilder()
                         .statusCode(200)
@@ -201,6 +183,35 @@ public class WebClient {
             outputStream.close();
             accept.close();
         }
+    }
+
+    private void parseJsonBody(RequestHandler requestHandler, String rawBody, HttpRequest<Object> request) {
+        TypeReference typeReference = this.requestBodyClzMap.get(requestHandler.getClass());
+        if(typeReference.getType() != Void.class && !StringUtils.isEmpty(rawBody)){
+            Object requestBody = Bson.deserializeFromJson(rawBody, typeReference);
+            request.setBody(requestBody);
+        }
+    }
+
+    private static String parseRequestBody(HttpRequest<Object> request, InputStream inputStream) throws IOException {
+        HashMap<String, String> headers = request.getHeaders();
+        String number = headers.getOrDefault(HTTPHeaders.CONTENT_LENGTH.getHeader(), "0");
+        int contentLength = Integer.parseInt(number);
+        String rawBody = null;
+        if(contentLength > 0){
+            byte[] bodyBytes = new byte[contentLength];
+            int totalBytes = 0;
+            while (totalBytes < contentLength){
+                int read = inputStream.read(bodyBytes, totalBytes, contentLength - totalBytes);
+                if(read == -1){
+                    throw new InvalidRequestBodyException("Unexpected end of stream!");
+                }
+                totalBytes += read;
+            }
+            rawBody = new String(bodyBytes, StandardCharsets.UTF_8);
+            request.setBody(rawBody);
+        }
+        return rawBody;
     }
 
     private static TypeReference getRequestClass(RequestHandler requestHandler) {

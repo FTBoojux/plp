@@ -13,8 +13,8 @@ public class FormDataTest {
         FormData formData = new FormData();
         formData.put("name","Boojux");
         formData.put("sex","male");
-        formData.put("age",Integer.parseInt("1"));
-        formData.put("height", 172.3);
+        formData.put("age",1);
+        formData.put("height", "172.3");
         formData.put("categories","meat");
         formData.put("categories","fish");
         Map<String, String> item1 = new HashMap<>();
@@ -23,6 +23,7 @@ public class FormDataTest {
         Map<String,String> item2 = new HashMap<>();
         item2.put("address","address2");
         formData.put("items",item2);
+        formData.put("paid","true");
 
         String name = formData.getString("name");
         FtAssert.fAssert(StringUtils.equals(name, "Boojux"));
@@ -33,7 +34,7 @@ public class FormDataTest {
         Integer age = formData.getInteger("age");
         FtAssert.fAssert(age == 1);
 
-        double height = (double)formData.getNumber("height");
+        double height = formData.getDouble("height");
         FtAssert.fAssert(height==172.3);
 
         List<String> categories = formData.getAll("categories", String.class);
@@ -41,6 +42,9 @@ public class FormDataTest {
 
         List<Item> items = formData.getAll("items", Item.class);
         FtAssert.fAssert(!CollectionUtils.isEmpty(items));
+
+        Boolean paid = formData.getBoolean("paid");
+        FtAssert.fAssert(paid);
     }
     static class Item{
         private String address;
