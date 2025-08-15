@@ -1,6 +1,7 @@
 use crate::web_client::error::err::ParseError;
 use crate::web_client::error::err::ParseError::InvalidParseBodyError;
 use std::collections::HashMap;
+use std::num::ParseFloatError;
 use std::str::Chars;
 
 #[derive(Debug, PartialEq)]
@@ -208,8 +209,11 @@ impl<'a> JsonParser<'a> {
                 string.push(self.pop());
             }
         }
-        let number = string.parse().unwrap();
-        Ok(JsonType::Number(number))
+        let parse_result: Result<f64,ParseFloatError> = string.parse();
+        match parse_result {
+            Ok(number) => Ok(JsonType::Number(number)),
+            Err(_parse_float_error) => Err(InvalidParseBodyError(format!("Failed to cast from {}", string))),
+        }
     }
 
     fn pop(&mut self) -> char {

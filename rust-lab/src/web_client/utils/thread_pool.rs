@@ -48,10 +48,7 @@ impl ThreadPool {
     }
 
 }
-    // pub fn spawn<F, T>(f: F) -> JoinHandle<T>
-    // where
-    //     F: FnOnce() -> T + Send + 'static,
-    //     T: Send + 'static
+
 struct Worker {
     id: usize,
     thread: Option<thread::JoinHandle<()>>,
