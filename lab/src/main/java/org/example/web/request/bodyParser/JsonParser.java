@@ -13,10 +13,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 对应application/json类型
+ * 用于处理 application/json 格式的数据
  */
-public class JsonDecorator implements BodyParser {
-    private final Map<RequestHandler<?>, TypeReference> requestBodyClzMap = new HashMap<>();
+public class JsonParser implements BodyParser {
+    private static final Map<RequestHandler<?>, TypeReference> requestBodyClzMap = new HashMap<>();
 
     @Override
     public void extractBodyData(String rawBody, HttpRequest<Object> httpRequest, MatchResult matchResult) {
@@ -25,7 +25,7 @@ public class JsonDecorator implements BodyParser {
             requestBodyClzMap.put(requestHandler, getRequestClass(requestHandler));
         }
         TypeReference typeReference = requestBodyClzMap.get(requestHandler);
-        if (Void.class != typeReference.getType() && StringUtils.isEmpty(rawBody)){
+        if (Void.class != typeReference.getType() && !StringUtils.isEmpty(rawBody)){
             Object requestBody = Bson.deserializeFromJson(rawBody, typeReference);
             httpRequest.setBody(requestBody);
         }

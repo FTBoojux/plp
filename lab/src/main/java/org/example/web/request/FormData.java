@@ -16,6 +16,9 @@ public class FormData {
     public static FormData newInstance(){
         return new FormData();
     }
+    private FormData(){
+
+    }
 
     /** 将T类型的值放到key对应的值的尾部
      * @param key
@@ -176,4 +179,10 @@ public class FormData {
         throw new ClassCastException("Failed to cast to MultipartFile for key : " + object);
     }
 
+    @Override
+    public String toString() {
+        return "FormData{" +
+                "data=" + data +
+                '}';
+    }
 }

@@ -7,22 +7,26 @@ import org.example.web.request.FormData;
 import org.example.web.request.HttpRequest;
 import org.example.web.utils.web.MatchResult;
 
-public class FormDataDecorator implements BodyParser{
+/**
+ * 用于处理 multipart/form-data 格式
+ */
+public class FormDataParser implements BodyParser{
     private final String prefix = "Content-Disposition: form-data; name=\"";
     @Override
     public void extractBodyData(String rawBody, HttpRequest<Object> httpRequest, MatchResult matchResult) {
-        FormData formData = new FormData();
+        FormData formData = FormData.newInstance();
 
         String content_type = httpRequest.getHeaders().getOrDefault(HTTPHeaders.CONTENT_TYPE.getHeader(), StringEnums.EMPTY.getString());
         String[] lines = splitByBoundary(rawBody, content_type);
         for (String line : lines) {
+            line = line.trim();
             String[] content = line.split("\n");
             if (content.length < 3){
                 continue;
             }
-            String content_disposition = content[0];
-            String name = content_disposition.substring(prefix.length() + 1,content_disposition.length()-1);
-            String value = content[content.length-1];
+            String content_disposition = content[0].trim();
+            String name = content_disposition.substring(prefix.length(), content_disposition.length()-1).trim();
+            String value = content[content.length-2].trim();
             if (StringUtils.isEmpty(value)) {
                 formData.put(name, StringEnums.EMPTY.getString());
             }else {

@@ -1,10 +1,13 @@
 package org.example.web;
 
+import org.example.enums.ContentType;
 import org.example.enums.HTTPHeaders;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
 import org.example.web.request.HttpRequest;
+import org.example.web.request.bodyParser.BodyParser;
+import org.example.web.request.bodyParser.BodyParserFactory;
 import org.example.web.utils.Pair;
 import org.example.web.utils.http.HttpResponseBuilder;
 import org.example.utils.json.Bson;
@@ -35,7 +38,6 @@ public class WebClient {
     private int backLog = 200;
     private long timeout = 60;
     private TimeUnit timeUnit = TimeUnit.SECONDS;
-    private static final Bson bson = new Bson();
 
     private ExecutorService threadPool;
     public ExecutorService getThreadPool() {
@@ -153,8 +155,11 @@ public class WebClient {
             }else{
                 request.setPathVariables(matchResult.pathVariables);
                 RequestHandler requestHandler = matchResult.requestHandler;
-
-                parseJsonBody(requestHandler, rawBody, request);
+                ContentType contentType = ContentType.getContentType(request.getHeaders().get(HTTPHeaders.CONTENT_TYPE.getHeader()));
+                if (!Objects.isNull(contentType)) {
+                    BodyParser parser = BodyParserFactory.getBodyParserByContentType(contentType);
+                    parser.extractBodyData(rawBody, request, matchResult);
+                }
                 Object responseBody = requestHandler.doHandle(request);
                 HttpResponseBuilder responseBuilder = new HttpResponseBuilder()
                         .statusCode(200)
@@ -219,8 +224,7 @@ public class WebClient {
         TypeReference typeReference = new TypeReference(Void.class);
         Type[] requestInterfaces = requestHandler.getClass().getGenericInterfaces();
         for (Type requestInterface : requestInterfaces) {
-            if (requestInterface instanceof ParameterizedType){
-                ParameterizedType parameterizedType = (ParameterizedType) requestInterface;
+            if (requestInterface instanceof ParameterizedType parameterizedType){
                 if (parameterizedType.getRawType() == RequestHandler.class){
                     Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
                     if(actualTypeArguments.length > 0){
