@@ -5,6 +5,7 @@ import org.example.enums.HTTPHeaders;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
+import org.example.web.request.FormData;
 import org.example.web.request.HttpRequest;
 import org.example.web.request.bodyParser.BodyParser;
 import org.example.web.request.bodyParser.BodyParserFactory;
@@ -141,7 +142,7 @@ public class WebClient {
                 }
             }
             HttpRequest<Object> request = convertToRequest(lines);
-            String rawBody = parseRequestBody(request, inputStream);
+//            String rawBody = parseRequestBody(request, inputStream);
             Fog.FOGGER.log(request);
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
@@ -158,7 +159,11 @@ public class WebClient {
                 ContentType contentType = ContentType.getContentType(request.getHeaders().get(HTTPHeaders.CONTENT_TYPE.getHeader()));
                 if (!Objects.isNull(contentType)) {
                     BodyParser parser = BodyParserFactory.getBodyParserByContentType(contentType);
-                    parser.extractBodyData(rawBody, request, matchResult);
+                    String _contentLength = request.getHeaders().getOrDefault(HTTPHeaders.CONTENT_LENGTH.getHeader(),"0");
+                    long contentLength = Long.parseLong(_contentLength);
+                    Pair<FormData,Object> result = parser.extractBodyData(inputStream, request.getHeaders(), matchResult);
+                    request.setFormData(result.first);
+                    request.setBody(result.second);
                 }
                 Object responseBody = requestHandler.doHandle(request);
                 HttpResponseBuilder responseBuilder = new HttpResponseBuilder()

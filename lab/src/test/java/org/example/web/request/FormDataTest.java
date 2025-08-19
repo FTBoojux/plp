@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class FormDataTest {
     public static void main(String[] args) {
-        FormData formData = new FormData();
+        FormData formData = FormData.newInstance();
         formData.put("name","Boojux");
         formData.put("sex","male");
         formData.put("age",1);
