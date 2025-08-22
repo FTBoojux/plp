@@ -1,7 +1,7 @@
 package org.example.web;
 
 import org.example.enums.ContentType;
-import org.example.enums.HTTPHeaders;
+import org.example.enums.HTTPHeadersEnum;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
@@ -156,12 +156,12 @@ public class WebClient {
             }else{
                 request.setPathVariables(matchResult.pathVariables);
                 RequestHandler requestHandler = matchResult.requestHandler;
-                ContentType contentType = ContentType.getContentType(request.getHeaders().get(HTTPHeaders.CONTENT_TYPE.getHeader()));
+                ContentType contentType = ContentType.getContentType(request.getHeaders().get(HTTPHeadersEnum.CONTENT_TYPE.getHeader()));
                 if (!Objects.isNull(contentType)) {
                     BodyParser parser = BodyParserFactory.getBodyParserByContentType(contentType);
-                    String _contentLength = request.getHeaders().getOrDefault(HTTPHeaders.CONTENT_LENGTH.getHeader(),"0");
+                    String _contentLength = request.getHeaders().getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH.getHeader(),"0");
                     long contentLength = Long.parseLong(_contentLength);
-                    Pair<FormData,Object> result = parser.extractBodyData(inputStream, request.getHeaders(), matchResult);
+                    Pair<FormData,Object> result = parser.extractBodyData(inputStream, headers, null);
                     request.setFormData(result.first);
                     request.setBody(result.second);
                 }
@@ -205,7 +205,7 @@ public class WebClient {
 
     private static String parseRequestBody(HttpRequest<Object> request, InputStream inputStream) throws IOException {
         HashMap<String, String> headers = request.getHeaders();
-        String number = headers.getOrDefault(HTTPHeaders.CONTENT_LENGTH.getHeader(), "0");
+        String number = headers.getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH.getHeader(), "0");
         int contentLength = Integer.parseInt(number);
         String rawBody = null;
         if(contentLength > 0){
