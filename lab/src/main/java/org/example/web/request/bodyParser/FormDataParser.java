@@ -1,13 +1,15 @@
 package org.example.web.request.bodyParser;
 
 import GlobalEnums.StringEnums;
-import org.example.enums.HTTPHeaders;
+import org.example.enums.HTTPHeadersEnum;
 import org.example.utils.StringUtils;
+import org.example.web.RequestHandler;
 import org.example.web.request.FormData;
-import org.example.web.request.HttpRequest;
+import org.example.web.request.HttpHeaders;
 import org.example.web.utils.Pair;
 import org.example.web.utils.web.MatchResult;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -19,10 +21,11 @@ import java.util.Map;
  */
 public class FormDataParser implements BodyParser{
     private final String prefix = "Content-Disposition: form-data; name=\"";
-    public void extractBodyData(String rawBody, HttpRequest<Object> httpRequest, MatchResult matchResult) {
+    @Override
+    public Pair<FormData, Object> extractBodyData(InputStream inputStream, Map<String, String> headers, MatchResult matchResult) {
         FormData formData = FormData.newInstance();
 
-        String content_type = httpRequest.getHeaders().getOrDefault(HTTPHeaders.CONTENT_TYPE.getHeader(), StringEnums.EMPTY.getString());
+        String content_type = headers.getOrDefault(HTTPHeadersEnum.CONTENT_TYPE.getHeader(), StringEnums.EMPTY.getString());
         String[] lines = splitByBoundary(rawBody, content_type);
         for (String line : lines) {
             line = line.trim();
@@ -56,10 +59,9 @@ public class FormDataParser implements BodyParser{
         return rawBody.split(boundary);
     }
 
-    @Override
-    public Pair<FormData, Object> extractBodyData(InputStream inputStream, Map<String, String> headers, MatchResult matchResult) throws IOException {
+    public Pair<FormData, Object> extractBodyData(InputStream inputStream, Map<String, String> headers, RequestHandler requestHandler) throws IOException {
         PushbackInputStream pis = new PushbackInputStream(inputStream);
-        String content_type = headers.get(HTTPHeaders.CONTENT_TYPE.getHeader());
+        String content_type = headers.get(HTTPHeadersEnum.CONTENT_TYPE.getHeader());
         String[] content_types = content_type.split(";");
         if (content_types.length < 2){
             throw new IllegalArgumentException("Content-Type of http request must have type and boundary : " + content_type);
@@ -71,7 +73,7 @@ public class FormDataParser implements BodyParser{
         }
         String boundary = origin_boundary.substring(index+1);
         byte[] buffer = new byte[8096];
-        String _contentLength = headers.get(HTTPHeaders.CONTENT_LENGTH.getHeader());
+        String _contentLength = headers.get(HTTPHeadersEnum.CONTENT_LENGTH.getHeader());
         if (StringUtils.isEmpty(_contentLength)) {
             throw new IllegalArgumentException("Lack Content-Length.");
         }
@@ -80,6 +82,15 @@ public class FormDataParser implements BodyParser{
         while (read < contentLength){
             read += pis.read(buffer);
         }
+
+    }
+
+    @Override
+    public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, RequestHandler requestHandler) throws IOException {
+        int contentLength = headers.getContentLength();
+        byte[] bytesRead = inputStream.readNBytes(contentLength);
+        String boundary = headers.getByEnum(HTTPHeadersEnum.BOUNDARY);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(contentLength);
 
     }
 }

@@ -1,11 +1,13 @@
 package org.example.enums;
 
-public enum HTTPHeaders {
+public enum HTTPHeadersEnum {
     CONTENT_TYPE("Content-Type"),
-    CONTENT_LENGTH("Content-Length");
+    CONTENT_LENGTH("Content-Length"),
+    BOUNDARY("boundary")
+    ;
     private final String header;
 
-    HTTPHeaders(String header) {
+    HTTPHeadersEnum(String header) {
         this.header = header;
     }
 
