@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 public class HttpHeaders extends HashMap<String, String> {
     public int getContentLength() {
-        String contentLengthString = this.getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH,"0");
+        String contentLengthString = this.getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH.getHeader(),"0");
         return Integer.parseInt(contentLengthString);
     }
     public int getIntDefaultZero(String key) {
