@@ -6,7 +6,7 @@ public class HttpRequest<T> {
     private String method;
     private String path;
     private String version;
-    private HashMap<String,String> headers;
+    private HttpHeaders headers;
     private HashMap<String,String> params;
     private HashMap<String,String> pathVariables;
     private FormData formData;
@@ -50,11 +50,11 @@ public class HttpRequest<T> {
         this.version = version;
     }
 
-    public HashMap<String, String> getHeaders() {
+    public HttpHeaders getHeaders() {
         return headers;
     }
 
-    public void setHeaders(HashMap<String, String> headers) {
+    public void setHeaders(HttpHeaders headers) {
         this.headers = headers;
     }
 

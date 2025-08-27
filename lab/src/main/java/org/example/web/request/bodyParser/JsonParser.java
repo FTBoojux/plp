@@ -48,6 +48,7 @@ public class JsonParser implements BodyParser {
             requestBodyClzMap.put(requestHandler, getRequestClass(requestHandler));
         }
         TypeReference typeReference = requestBodyClzMap.get(requestHandler);
+        int contentLength = headers.getContentLength();
         String rawBody = new String(inputStream.readNBytes(contentLength));
         if (Void.class != typeReference.getType() && !StringUtils.isEmpty(rawBody)){
             Object requestBody = Bson.deserializeFromJson(rawBody, typeReference);

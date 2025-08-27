@@ -6,6 +6,7 @@ import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
 import org.example.web.request.FormData;
+import org.example.web.request.HttpHeaders;
 import org.example.web.request.HttpRequest;
 import org.example.web.request.bodyParser.BodyParser;
 import org.example.web.request.bodyParser.BodyParserFactory;
@@ -143,7 +144,6 @@ public class WebClient {
             }
             HttpRequest<Object> request = convertToRequest(lines);
 //            String rawBody = parseRequestBody(request, inputStream);
-            Fog.FOGGER.log(request);
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
             if(matchResult == null || matchResult.requestHandler == null){
@@ -161,7 +161,7 @@ public class WebClient {
                     BodyParser parser = BodyParserFactory.getBodyParserByContentType(contentType);
                     String _contentLength = request.getHeaders().getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH.getHeader(),"0");
                     long contentLength = Long.parseLong(_contentLength);
-                    Pair<FormData,Object> result = parser.extractBodyData(inputStream, headers, null);
+                    Pair<FormData,Object> result = parser.extractBodyData(inputStream, request.getHeaders(), matchResult.requestHandler);
                     request.setFormData(result.first);
                     request.setBody(result.second);
                 }
@@ -332,7 +332,7 @@ public class WebClient {
         }
 
         int blankIndex = -1;
-        HashMap<String, String> headers = new HashMap<>();
+        HttpHeaders headers = new HttpHeaders();
         objectHttpRequest.setHeaders(headers);
         for(int i = 1; i < requestLines.size(); i++){
             String trim = requestLines.get(i).trim();
