@@ -7,14 +7,13 @@ import org.example.web.utils.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  * 用于处理 application/x-www-form-urlencoded 格式的数据
  */
 public class FormUrlencodedParser implements BodyParser{
     @Override
-    public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, RequestHandler requestHandler) throws IOException {
+    public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, RequestHandler<?> requestHandler) throws IOException {
         byte[] bytes = inputStream.readNBytes(headers.getContentLength());
         String rawBody = new String(bytes);
         FormData formData = FormData.newInstance();
