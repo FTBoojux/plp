@@ -33,7 +33,7 @@ public class FileUploadHandler implements RequestHandler<Void> {
 
     @Override
     public String getUrl() {
-        return "fileUpload";
+        return "/fileUpload";
     }
 
     @Override

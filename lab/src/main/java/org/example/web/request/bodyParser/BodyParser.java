@@ -8,11 +8,10 @@ import org.example.web.utils.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  * 用于将request body根据不同的Content-Type加工成需要的形式并填充到httpRequest中
  */
 public interface BodyParser {
-    Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, @Optional RequestHandler requestHandler) throws IOException;
+    Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, @Optional RequestHandler<?> requestHandler) throws IOException;
 }

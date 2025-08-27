@@ -22,13 +22,12 @@ import java.util.Map;
 public class JsonParser implements BodyParser {
     private static final Map<RequestHandler<?>, TypeReference> requestBodyClzMap = new HashMap<>();
 
-    private static TypeReference getRequestClass(RequestHandler requestHandler) {
+    private static TypeReference getRequestClass(RequestHandler<?> requestHandler) {
 //        Class<?> requestClz = Void.class;
         TypeReference typeReference = new TypeReference(Void.class);
         Type[] requestInterfaces = requestHandler.getClass().getGenericInterfaces();
         for (Type requestInterface : requestInterfaces) {
-            if (requestInterface instanceof ParameterizedType){
-                ParameterizedType parameterizedType = (ParameterizedType) requestInterface;
+            if (requestInterface instanceof ParameterizedType parameterizedType){
                 if (parameterizedType.getRawType() == RequestHandler.class){
                     Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
                     if(actualTypeArguments.length > 0){
@@ -42,7 +41,7 @@ public class JsonParser implements BodyParser {
     }
 
     @Override
-    public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, @Optional RequestHandler requestHandler) throws IOException {
+    public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, @Optional RequestHandler<?> requestHandler) throws IOException {
         TypeReference requestClass = getRequestClass(requestHandler);
         if (!requestBodyClzMap.containsKey(requestHandler)){
             requestBodyClzMap.put(requestHandler, getRequestClass(requestHandler));
