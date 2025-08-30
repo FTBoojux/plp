@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use std::io;
 use std::io::{BufRead, BufReader, Error, ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::num::ParseIntError;
 use std::sync::Arc;
-use log::log;
 use socket2::{Domain, Socket, Type};
-use crate::web_client::enums::{HttpMethod, PathType, RequestHandler};
+use crate::web_client::enums::{ContentType, HttpMethod, PathType, RequestHandler};
 use crate::web_client::error::err::ParseError;
 use crate::web_client::utils::fog::fog;
 use crate::web_client::utils::fog::fog::log;
-use crate::web_client::utils::json::bson::{JsonParser, JsonType};
 use crate::web_client::utils::thread_pool::ThreadPool;
+use crate::web_client::utils::web::body_parser::get_parser_by_content_type;
+use crate::web_client::utils::web::form_data::FormData;
+use crate::web_client::utils::web::request::{HttpHeader, HttpRequest};
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use crate::web_client::utils::web::route_tree::RouteTree;
 
@@ -21,15 +21,7 @@ pub struct WebClient {
     route_tree: RouteTree,
     thread_pool: ThreadPool
 }
-#[derive(Debug)]
-pub struct HttpRequest {
-    method: String,
-    path: String,
-    version: String,
-    pub headers: HashMap<String, String>,
-    pub params: HashMap<String, String>,
-    pub request_body: Option<JsonType>,
-}
+
 pub struct RequestMatchResult<'a>{
     pub matched: bool,
     pub request: HttpRequest,
@@ -115,65 +107,66 @@ impl WebClient {
             }
         }
 
-        let mut headers:HashMap<String, String> = HashMap::new();
+        let mut headers= HttpHeader::new();
         lines.iter().for_each(|line| {
             let header:Vec<&str> = line.split(": ").collect();
             let key = header[0];
             let value = if header.len() > 1 {header[1]} else {""};
-            headers.insert(key.to_string(), value.to_string());
+            headers.insert(key, value.to_string());
         });
-        let mut request_body = None;
-        if let Some(content_length) = headers.get("Content-Length") {
-            let parse = content_length.trim().parse::<usize>();
-            let json_type = match parse {
-                Ok(content_length) => {
-                    let mut v8: Vec<u8> = Vec::new();
-                    let mut u8:[u8;1024] = [0;1024];
-                    let mut read_length = 0;
-                    loop {
-                        if read_length >= content_length {
-                            break;
+        let content_type = headers.get_content_type();
+        if let Some(content_type) =  content_type {
+            let position_of_semicolon = content_type.find(';');
+            let position_of_semicolon = match position_of_semicolon {
+                None => content_type.len(),
+                Some(index) => index
+            };
+            let (content_type,boundary) = content_type.split_at(position_of_semicolon);
+            let handler = get_parser_by_content_type(ContentType::parse(content_type.trim()));
+            let parse_result = (*handler)(&mut buf_reader, &headers);
+            match parse_result {
+                Ok((form_data, request_body)) => Ok(HttpRequest{
+                    method,
+                    path,
+                    params,
+                    version,
+                    headers,
+                    form_data,
+                    request_body:Some(request_body)
+                }),
+                Err(err) => {
+                    match err {
+                        ParseError::InvalidRequestError(err) => {
+                            log(err);
                         }
-                        let length = buf_reader.read(&mut u8).expect("Faild to read the request body!");
-                        read_length += length;
-                        for ch in u8 {
-                            v8.push(ch);
+                        ParseError::InvalidParseBodyError(err) => {
+                            log(err);
                         }
                     }
-                    let body_string = String::from_utf8(v8).expect("Failed to convert the request body!");
-                    let mut parser = JsonParser::new(body_string.as_str());
-                    let json_type = match parser.parse() {
-                        Ok(res) => {
-                            Some(res)
-                        }
-                        Err(ParseError::InvalidParseBodyError(s)) => {
-                            log(s);
-                            None
-                        },
-                        Err(ParseError::InvalidRequestBodyError(s)) => {
-                            log(s);
-                            None
-                        }
-                    };
-                    json_type
+                    Ok(HttpRequest{
+                        method,
+                        path,
+                        params,
+                        version,
+                        headers,
+                        form_data: FormData::new(),
+                        request_body: None
+                    })
                 }
-                Err(e) => {
-                    log(e.to_string());
-                    None
-                }
-            };
-            request_body = json_type;
-        }
-        Ok(
-            HttpRequest{
-                method,
-                path,
-                params,
-                version,
-                headers,
-                request_body
             }
-        )
+        } else {
+            Ok(
+                HttpRequest{
+                    method,
+                    path,
+                    params,
+                    version,
+                    headers,
+                    form_data: FormData::new(),
+                    request_body: None
+                }
+            )
+        }
     }
 
     fn route_request(&self, request: HttpRequest) -> HttpResponse {
@@ -221,14 +214,6 @@ impl WebClient {
                 });
             }
         }
-        // if !static_result.is_none() {
-        //     Ok(RequestMatchResult{
-        //         matched: true,
-        //         request: http_request,
-        //         request_handler: static_result.unwrap(),
-        //         path_variables: HashMap::new(),
-        //     })
-        // }
         if let Some(route) = self.route_tree.find(http_request.method.as_str(), http_request.path.as_str()) {
             Ok(
                 RequestMatchResult {

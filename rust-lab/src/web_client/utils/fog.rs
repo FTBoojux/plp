@@ -16,10 +16,10 @@ pub mod fog{
         }
     }
 
-    pub fn log(message: String){
+    pub fn log(message:impl Into<String>){
         if let Ok(guard) = SENDER.lock(){
             if let Some(sender) = &*guard{
-                let _ = sender.send(message);
+                let _ = sender.send(message.into());
             }
         }
     }

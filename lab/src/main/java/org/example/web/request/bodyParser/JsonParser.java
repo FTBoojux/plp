@@ -42,7 +42,6 @@ public class JsonParser implements BodyParser {
 
     @Override
     public Pair<FormData, Object> extractBodyData(InputStream inputStream, HttpHeaders headers, @Optional RequestHandler<?> requestHandler) throws IOException {
-        TypeReference requestClass = getRequestClass(requestHandler);
         if (!requestBodyClzMap.containsKey(requestHandler)){
             requestBodyClzMap.put(requestHandler, getRequestClass(requestHandler));
         }

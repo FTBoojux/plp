@@ -1,4 +1,4 @@
-use crate::web_client::web_client::{HttpRequest, RequestMatchResult};
+use crate::web_client::web_client::{RequestMatchResult};
 
 pub fn health_check(http_request:RequestMatchResult) -> Result<String,std::io::Error> {
     Ok("health check".to_string())

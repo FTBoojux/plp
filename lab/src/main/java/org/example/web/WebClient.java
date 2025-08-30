@@ -159,8 +159,6 @@ public class WebClient {
                 ContentType contentType = ContentType.getContentType(request.getHeaders().get(HTTPHeadersEnum.CONTENT_TYPE.getHeader()));
                 if (!Objects.isNull(contentType)) {
                     BodyParser parser = BodyParserFactory.getBodyParserByContentType(contentType);
-                    String _contentLength = request.getHeaders().getOrDefault(HTTPHeadersEnum.CONTENT_LENGTH.getHeader(),"0");
-                    long contentLength = Long.parseLong(_contentLength);
                     Pair<FormData,Object> result = parser.extractBodyData(inputStream, request.getHeaders(), matchResult.requestHandler);
                     request.setFormData(result.first);
                     request.setBody(result.second);

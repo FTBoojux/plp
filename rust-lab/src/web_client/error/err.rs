@@ -1,5 +1,5 @@
 #[derive(Debug)]
 pub enum ParseError {
-    InvalidRequestBodyError(String),
+    InvalidRequestError(String),
     InvalidParseBodyError(String),
 }
