@@ -42,24 +42,6 @@ public class FormData {
         }
         return objectList.getFirst();
     }
-    /** 获取key对应的第一个值
-     * @param key
-     * @return
-     */
-    @Nullable
-    private Object getFirst(String key){
-        List<Object> objectList = this.data.get(key);
-        if (CollectionUtils.isEmpty(objectList)){
-            return null;
-        }
-        Object first = objectList.getFirst();
-        if (Objects.isNull(first)){
-            return null;
-        }
-        String string = first.toString();
-        JsonParser jsonParser = new JsonParser();
-        return jsonParser.parse(string);
-    }
 
     /**
      * 获取指定key的所有值，如果不存在则返回一个容量为0的列表

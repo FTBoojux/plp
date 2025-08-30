@@ -26,3 +26,9 @@ introduce asynchronous log printing
 
 introduce JSON parser and request body parser
 
+### 2025-08-30
+增加了对 form-data 和 x-www-form-urlencoded 格式数据的支持
+
+support transfer data  in the format of form-data and x-www-form-urlencoded
+
+[细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250830.formDataAndUrlencoded.md)
