@@ -150,6 +150,7 @@ public class WebClient {
 //            String rawBody = parseRequestBody(request, inputStream);
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
 //                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
+            preHandle(request);
             if(matchResult == null || matchResult.requestHandler == null){
                 String notFound = new HttpResponseBuilder()
                         .statusCode(404)
@@ -194,6 +195,12 @@ public class WebClient {
             outputStream.flush();
             outputStream.close();
             accept.close();
+        }
+    }
+
+    private void preHandle(HttpRequest<?> request) {
+        for (MiddlewareHandler preMiddleware : this.preMiddlewares) {
+            preMiddleware.handle(request);
         }
     }
 
