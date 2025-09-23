@@ -17,9 +17,8 @@ import java.net.http.HttpResponse;
 
 public class MiddlewareTest {
     public static void main(String[] args) throws InterruptedException {
-        ExampleMiddleware middleware = new ExampleMiddleware();
         WebClient webClient = WebClient.build().bind(8000)
-                .addPreMiddleware(middleware)
+                .addPreMiddleware(new FirstMiddleware())
                 .addPreMiddleware(new SecondMiddleware())
                 .addPostHandler(new ExampleAfterMiddleware())
                 .addHandler(new IllegalInformationHandler())
@@ -39,14 +38,14 @@ public class MiddlewareTest {
     }
     @FTest
     public void addPreMiddlewareToWebClient() throws IOException {
-        ExampleMiddleware middleware = new ExampleMiddleware();
+        FirstMiddleware middleware = new FirstMiddleware();
         WebClient client = WebClient.build().bind(8000)
                 .addPreMiddleware(middleware);
         FtAssert.fAssert(client.getPreMiddlewares().contains(middleware));
     }
     @FTest
     public void addPostMiddlewareToWebClient() {
-        ExampleMiddleware middleware = new ExampleMiddleware();
+        FirstMiddleware middleware = new FirstMiddleware();
         WebClient client = WebClient.build().bind(8000)
                 .addPostHandler(middleware);
         FtAssert.fAssert(client.getPostMiddlewares().contains(middleware));
@@ -87,7 +86,7 @@ public class MiddlewareTest {
     }
 }
 
-class ExampleMiddleware implements MiddlewareHandler {
+class FirstMiddleware implements MiddlewareHandler {
     @Override
     public boolean handle(org.example.web.request.HttpRequest<?> httpRequest, HttpResponseBuilder response) {
         HttpHeaders headers = httpRequest.getHeaders();
