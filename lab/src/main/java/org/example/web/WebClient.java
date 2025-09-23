@@ -5,6 +5,7 @@ import org.example.enums.HTTPHeadersEnum;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
+import org.example.web.middleware.MiddlewareHandler;
 import org.example.web.request.FormData;
 import org.example.web.request.HttpHeaders;
 import org.example.web.request.HttpRequest;
@@ -24,6 +25,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -40,6 +42,8 @@ public class WebClient {
     private int backLog = 200;
     private long timeout = 60;
     private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private List<MiddlewareHandler> preMiddlewares = new ArrayList<>();
+    private List<MiddlewareHandler> postMiddlewares = new ArrayList<>();
 
     private ExecutorService threadPool;
     public ExecutorService getThreadPool() {
@@ -360,5 +364,26 @@ public class WebClient {
 
     public void setRequestBodyClzMap(Map<Class<?>, TypeReference> requestBodyClzMap) {
         this.requestBodyClzMap = requestBodyClzMap;
+    }
+
+    public WebClient addPreMiddleware(MiddlewareHandler middleware) {
+        preMiddlewares.add(middleware);
+        return this;
+    }
+    public List<MiddlewareHandler> getPreMiddlewares(){
+        return preMiddlewares;
+    }
+
+    public void setPreMiddlewares(List<MiddlewareHandler> preMiddlewares) {
+        this.preMiddlewares = preMiddlewares;
+    }
+
+    public WebClient addPostHandler(MiddlewareHandler middleware) {
+        this.postMiddlewares.add(middleware);
+        return this;
+    }
+
+    public List<MiddlewareHandler> getPostMiddlewares() {
+        return postMiddlewares;
     }
 }
