@@ -32,3 +32,8 @@ introduce JSON parser and request body parser
 support transfer data  in the format of form-data and x-www-form-urlencoded
 
 [细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250830.formDataAndUrlencoded.md)
+
+### 2025-09-23
+增加了拦截器，支持请求前和请求后处理
+
+add interceptor and now support preHandler and postHandler
