@@ -29,7 +29,7 @@ public class HttpResponseBuilder {
 
     private String reasonPhrase = "OK";
     private Map<String, String> headers;
-    private String body;
+    private String body = "";
 
     public HttpResponseBuilder httpVersion(String httpVersion){
         this.httpVersion = httpVersion;

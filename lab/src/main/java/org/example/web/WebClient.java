@@ -150,6 +150,7 @@ public class WebClient {
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
             if (!preHandle(request, responseBuilder)) {
                 outputStream.write(responseBuilder.build().getBytes());
+                return;
             }
             if(matchResult == null || matchResult.requestHandler == null){
                 String notFound = responseBuilder
