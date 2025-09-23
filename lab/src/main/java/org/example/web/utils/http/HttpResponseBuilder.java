@@ -6,6 +6,27 @@ import java.util.Map;
 public class HttpResponseBuilder {
     private String httpVersion =  "HTTP/1.1";
     private int statusCode = 200;
+
+    public String getHttpVersion() {
+        return httpVersion;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getReasonPhrase() {
+        return reasonPhrase;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
     private String reasonPhrase = "OK";
     private Map<String, String> headers;
     private String body;
