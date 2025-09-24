@@ -5,6 +5,7 @@ import org.example.enums.HTTPHeadersEnum;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
 import org.example.web.exceptions.*;
+import org.example.web.middleware.MiddlewareHandler;
 import org.example.web.request.FormData;
 import org.example.web.request.HttpHeaders;
 import org.example.web.request.HttpRequest;
@@ -40,6 +41,8 @@ public class WebClient {
     private int backLog = 200;
     private long timeout = 60;
     private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private List<MiddlewareHandler> preMiddlewares = new ArrayList<>();
+    private List<MiddlewareHandler> postMiddlewares = new ArrayList<>();
 
     private ExecutorService threadPool;
     public ExecutorService getThreadPool() {
@@ -132,6 +135,7 @@ public class WebClient {
     }
     private void handleRequest(Socket accept) throws IOException {
         OutputStream outputStream = accept.getOutputStream();
+        HttpResponseBuilder responseBuilder = new HttpResponseBuilder();
         try{
             InputStream inputStream = accept.getInputStream();
             String line;
@@ -143,11 +147,13 @@ public class WebClient {
                 }
             }
             HttpRequest<Object> request = convertToRequest(lines);
-//            String rawBody = parseRequestBody(request, inputStream);
             MatchResult matchResult = findRequestHandler(request.getMethod(),request.getPath());
-//                RequestHandler requestHandler1 = getRequesthandler(request.getPath());
+            if (!preHandle(request, responseBuilder)) {
+                outputStream.write(responseBuilder.build().getBytes());
+                return;
+            }
             if(matchResult == null || matchResult.requestHandler == null){
-                String notFound = new HttpResponseBuilder()
+                String notFound = responseBuilder
                         .statusCode(404)
                         .reasonPhrase("Not Found")
                         .body("404 Not Found")
@@ -164,7 +170,7 @@ public class WebClient {
                     request.setBody(result.second);
                 }
                 Object responseBody = requestHandler.doHandle(request);
-                HttpResponseBuilder responseBuilder = new HttpResponseBuilder()
+                responseBuilder
                         .statusCode(200)
                         .reasonPhrase("OK");
                 if(!Objects.isNull(responseBody)){
@@ -172,14 +178,13 @@ public class WebClient {
                 }else{
                     responseBuilder.body("");
                 }
-                String response =
-                        responseBuilder
-                        .build();
+                postHande(request,responseBuilder);
+                String response = responseBuilder.build();
                 outputStream.write(response.getBytes());
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            String response = new HttpResponseBuilder()
+            String response = responseBuilder
                     .statusCode(500)
                     .reasonPhrase("Error")
                     .body("500 Internal Server Error")
@@ -191,6 +196,23 @@ public class WebClient {
             outputStream.close();
             accept.close();
         }
+    }
+
+    private void postHande(HttpRequest<?> request, HttpResponseBuilder responseBuilder) {
+        for (MiddlewareHandler postMiddleware : this.postMiddlewares) {
+            if (!postMiddleware.handle(request, responseBuilder)){
+                return;
+            }
+        }
+    }
+
+    private boolean preHandle(HttpRequest<?> request, HttpResponseBuilder responseBuilder) {
+        for (MiddlewareHandler preMiddleware : this.preMiddlewares) {
+            if (!preMiddleware.handle(request, responseBuilder)){
+                return false;
+            }
+        }
+        return true;
     }
 
     private void parseJsonBody(RequestHandler requestHandler, String rawBody, HttpRequest<Object> request) {
@@ -360,5 +382,26 @@ public class WebClient {
 
     public void setRequestBodyClzMap(Map<Class<?>, TypeReference> requestBodyClzMap) {
         this.requestBodyClzMap = requestBodyClzMap;
+    }
+
+    public WebClient addPreMiddleware(MiddlewareHandler middleware) {
+        preMiddlewares.add(middleware);
+        return this;
+    }
+    public List<MiddlewareHandler> getPreMiddlewares(){
+        return preMiddlewares;
+    }
+
+    public void setPreMiddlewares(List<MiddlewareHandler> preMiddlewares) {
+        this.preMiddlewares = preMiddlewares;
+    }
+
+    public WebClient addPostHandler(MiddlewareHandler middleware) {
+        this.postMiddlewares.add(middleware);
+        return this;
+    }
+
+    public List<MiddlewareHandler> getPostMiddlewares() {
+        return postMiddlewares;
     }
 }
