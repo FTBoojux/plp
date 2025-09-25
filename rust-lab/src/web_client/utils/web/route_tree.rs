@@ -2,7 +2,6 @@ use crate::web_client::enums::{RequestHandler, WILDCARD_STR};
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
 
 struct MatchCandidate<'a> {
     route_tree: &'a RouteTree,

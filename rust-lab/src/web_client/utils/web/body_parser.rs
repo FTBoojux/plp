@@ -78,7 +78,7 @@ pub fn parse_form_data(buf_reader: &mut BufReader<&mut TcpStream>, header: &Http
                         form_data.put(name.as_str(), FormDataType::FString(value));
                     }
                     3 => {
-                        let mut multipart_file_builder = MultipartFile::builder();
+                        let multipart_file_builder = MultipartFile::builder();
                         let filename_line = header_information.get(2).unwrap();
                         let filename = String::from_utf8(
                             copy_of_range(filename_line,FILENAME_PREFIX.len(),filename_line.len()-1)
@@ -124,7 +124,7 @@ fn read_n_bytes(buf_reader: &mut BufReader<&mut TcpStream>, content_length: i32)
         let read_result = buf_reader.read(&mut a8);
         match read_result {
             Ok(read_result) => { bytes_read += read_result; }
-            Err(err) => panic!("Failed to read request body!")
+            Err(_err) => panic!("Failed to read request body!")
         }
         for u in a8 {
             if u != 0 {
@@ -235,7 +235,6 @@ pub fn parse_json_body(buf_reader:&mut BufReader<&mut TcpStream>, header: &HttpH
     if content_length.is_none() {
         return Ok((FormData::new(),JsonType::Null));
     }
-    let mut body = JsonType::Null;
     let raw_body = read_n_bytes(buf_reader, content_length.unwrap());
     let raw_body = String::from_utf8(raw_body);
     match raw_body {

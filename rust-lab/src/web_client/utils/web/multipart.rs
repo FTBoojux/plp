@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use crate::web_client::enums::ContentType;
 
 
+#[derive(Clone)]
 pub struct MultipartFile {
     pub filename: String,
     pub content_type: ContentType,
@@ -46,7 +47,7 @@ impl MultipartFileBuilder {
         self.bytes = Some(bytes);
         self
     }
-    pub fn build(mut self) -> MultipartFile {
+    pub fn build(self) -> MultipartFile {
         let filename = if self.filename.is_none() { String::new() } else { self.filename.unwrap().clone() };
         let content_type = if self.content_type.is_none() {
             ContentType::BINARY

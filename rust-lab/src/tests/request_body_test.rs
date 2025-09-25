@@ -1,19 +1,19 @@
 mod test{
-    use std::collections::{BTreeMap, HashMap};
+    use crate::web_client::enums::HttpMethod;
+    use crate::web_client::health_check::{health_check, path_variable};
+    use crate::web_client::utils::fog::fog::log;
+    use crate::web_client::utils::json::bson::FromJson;
+    use crate::web_client::utils::json::bson::FromJsonOption;
+    use crate::web_client::utils::json::bson::JsonType;
+    use crate::web_client::web_client::{RequestMatchResult, WebClientBuilder};
+    use json_derive::FromJson;
+    use std::collections::HashMap;
     use std::fmt::Debug;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
-    use std::sync::{Mutex, OnceLock, RwLock};
+    use std::sync::{OnceLock, RwLock};
     use std::time::{SystemTime, UNIX_EPOCH};
-    use crate::web_client::utils::json::bson::FromJson;
-    use crate::web_client::utils::json::bson::FromJsonOption;
-    use crate::web_client::utils::json::bson::JsonType;
-    use json_derive::FromJson;
-    use crate::web_client::health_check::{health_check, path_variable};
-    use crate::web_client::utils::fog::fog::log;
-    use crate::web_client::web_client::{RequestMatchResult, WebClientBuilder};
-    use crate::web_client::enums::HttpMethod;
     #[derive(FromJson, Debug)]
     struct User{
         username: String,
@@ -92,17 +92,16 @@ mod test{
     }
     #[test]
     fn login_with_request(){
-        let client = WebClientBuilder::new()
+        WebClientBuilder::new()
             .port(8000)
             .backlog(300)
             .threads(11)
             .route(HttpMethod::GET, "/health", Box::new(health_check)).unwrap()
             .route(HttpMethod::GET, "/{name}/path", Box::new(path_variable)).unwrap()
             .route(HttpMethod::POST, "/login", Box::new(login)).unwrap()
-            .route(HttpMethod::POST,"/formData",Box::new(form_data_handler)).unwrap()
+            .route(HttpMethod::POST, "/formData", Box::new(form_data_handler)).unwrap()
             .build()
-            .unwrap().listen()
-            ;
+            .unwrap().listen();
     }
     #[test]
     fn request_with_different_content_type(){

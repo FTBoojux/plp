@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::num::ParseFloatError;
 use std::str::Chars;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum JsonType {
     Number(f64),
     JString(String),
@@ -315,7 +315,7 @@ mod tests{
     use json_derive::FromJson;
     #[test]
     fn convert_one_line_json_string() {
-        let json_string = "
+        let _json_string = "
             \"id\": \"12\\n3\",
             \"price\": \"123.45\",
             \"quantity\": -10,
