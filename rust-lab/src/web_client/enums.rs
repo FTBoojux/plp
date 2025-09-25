@@ -1,6 +1,10 @@
-use crate::web_client::web_client::{RequestMatchResult};
+use crate::web_client::utils::web::request::HttpRequest;
+use crate::web_client::web_client::{HttpResponse, RequestMatchResult};
 
 pub type RequestHandler = Box<dyn Fn(RequestMatchResult) -> Result<String, std::io::Error> + Send + Sync + 'static>;
+
+pub type Middleware = Box<dyn Fn(&mut HttpRequest,&mut HttpResponse)->bool+ Send + Sync + 'static>;
+
 #[derive(Debug)]
 pub enum PathType{
     // static path, like : /user/info
@@ -53,7 +57,7 @@ impl HttpHeadersEnum {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ContentType {
     JSON,
     FormData,

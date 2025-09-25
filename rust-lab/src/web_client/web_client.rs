@@ -1,25 +1,27 @@
-use std::collections::HashMap;
-use std::io;
-use std::io::{BufRead, BufReader, Error, ErrorKind, Read, Write};
-use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::sync::Arc;
-use socket2::{Domain, Socket, Type};
-use crate::web_client::enums::{ContentType, HttpMethod, PathType, RequestHandler};
+use crate::web_client::enums::{ContentType, HttpMethod, Middleware, PathType, RequestHandler};
 use crate::web_client::error::err::ParseError;
 use crate::web_client::utils::fog::fog;
 use crate::web_client::utils::fog::fog::log;
 use crate::web_client::utils::thread_pool::ThreadPool;
 use crate::web_client::utils::web::body_parser::get_parser_by_content_type;
 use crate::web_client::utils::web::form_data::FormData;
-use crate::web_client::utils::web::request::{HttpHeader, HttpRequest};
+pub(crate) use crate::web_client::utils::web::request::{HttpHeader, HttpRequest, HttpResponse};
 use crate::web_client::utils::web::route_pattern::RoutePattern;
 use crate::web_client::utils::web::route_tree::RouteTree;
+use socket2::{Domain, Socket, Type};
+use std::collections::HashMap;
+use std::io;
+use std::io::{BufRead, BufReader, Error, ErrorKind, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::sync::Arc;
 
 pub struct WebClient {
     tcp_listener: TcpListener,
     handlers:  HashMap<String, HashMap<String,RequestHandler>>,
     route_tree: RouteTree,
-    thread_pool: ThreadPool
+    thread_pool: ThreadPool,
+    pre_handler: Vec<Middleware>,
+    post_handler: Vec<Middleware>
 }
 
 pub struct RequestMatchResult<'a>{
@@ -28,13 +30,7 @@ pub struct RequestMatchResult<'a>{
     pub request_handler: &'a RequestHandler,
     pub path_variables: HashMap<String, String>,
 }
-struct HttpResponse {
-    http_version: String,
-    // headers: HashMap<String, String>,
-    status_code: u32,
-    response_phrase: String,
-    body: String,
-}
+
 
 impl RequestMatchResult<'_>{
     pub fn handle(self)->Result<String, std::io::Error>{
@@ -62,11 +58,21 @@ impl WebClient {
 
     fn handle_connection(&self, mut tcp_stream: TcpStream) {
        match self.parse_request(&mut tcp_stream) {
-           Ok(request) =>{
-               // println!("{} {} {}",request.method,request.path,request.version );
+           Ok(mut request) =>{
                log(format!("{} {} {}",request.method, request.path, request.version));
                log(format!("{:?}", request.request_body));
-               let response = self.route_request(request);
+               let mut response = HttpResponse::create(
+                   500,
+                   "Sever Error".to_string(),
+                    "".to_string(),
+               );
+               if !Self::pass_middleware(&self.pre_handler,&mut request, &mut response) {
+                   tcp_stream.write(response.build().as_bytes()).expect("TODO: panic message");
+                   return;
+               }
+               let mut clone_request = request.clone();
+               response = self.route_request(request);
+               Self::pass_middleware(&self.post_handler, &mut clone_request, &mut response);
                tcp_stream.write(response.build().as_bytes()).expect("TODO: panic message");
            },
            Err(e) => {
@@ -121,7 +127,7 @@ impl WebClient {
                 None => content_type.len(),
                 Some(index) => index
             };
-            let (content_type,boundary) = content_type.split_at(position_of_semicolon);
+            let (content_type, _boundary) = content_type.split_at(position_of_semicolon);
             let handler = get_parser_by_content_type(ContentType::parse(content_type.trim()));
             let parse_result = (*handler)(&mut buf_reader, &headers);
             match parse_result {
@@ -182,23 +188,20 @@ impl WebClient {
                     }
                 },
                 Err(e)=>{
-                    // println!("Error: {}", e);
                     log(format!("Error: {}", e));
-                    HttpResponse{
-                        http_version: String::from("HTTP/1.1"),
-                        status_code: 500,
-                        response_phrase: String::from("Internal Server Error"),
-                        body: e.to_string(),
-                    }
+                    HttpResponse::create(
+                        500,
+                        String::from("Internal Server Error"),
+                        e.to_string(),
+                    )
                 }
             }
         }else{
-            HttpResponse{
-                http_version: String::from("HTTP/1.1"),
-                status_code: 404,
-                response_phrase: String::from("Not Found"),
-                body: String::new(),
-            }
+            HttpResponse::create(
+                404,
+                String::from("Not Found"),
+                String::new(),
+            )
         }
     }
 
@@ -227,6 +230,15 @@ impl WebClient {
             Err(ErrorKind::NotFound)
         }
     }
+
+    fn pass_middleware(handlers: &Vec<Middleware>, http_request: &mut HttpRequest, http_response: &mut HttpResponse) -> bool {
+        for pre_handler in handlers {
+            if !pre_handler(http_request,http_response) {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 
@@ -237,6 +249,8 @@ pub struct WebClientBuilder {
     threads: u32,
     handlers: HashMap<String, HashMap<String, RequestHandler>>,
     route_tree: RouteTree,
+    pre_handler: Vec<Middleware>,
+    post_handler: Vec<Middleware>
 }
 
 impl WebClientBuilder {
@@ -247,7 +261,9 @@ impl WebClientBuilder {
             backlog: 200,
             threads: 4,
             handlers: HashMap::new(),
-            route_tree: RouteTree::new("","","")
+            route_tree: RouteTree::new("","",""),
+            pre_handler: Vec::new(),
+            post_handler: Vec::new()
         }
     }
     pub fn port(mut self, port: u16) -> WebClientBuilder {
@@ -283,7 +299,17 @@ impl WebClientBuilder {
             handlers: self.handlers,
             route_tree: self.route_tree,
             thread_pool: ThreadPool::new(self.threads),
+            pre_handler: self.pre_handler,
+            post_handler: self.post_handler
         }))
+    }
+    pub fn add_pre_handler(mut self, middleware: Middleware) -> WebClientBuilder {
+        self.pre_handler.push(middleware);
+        self
+    }
+    pub fn add_post_handler(mut self, middleware: Middleware) -> WebClientBuilder {
+        self.post_handler.push(middleware);
+        self
     }
     pub fn route0(mut self, http_type: &str, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, std::io::Error> {
         if self.handlers.contains_key(path) {
@@ -304,7 +330,7 @@ impl WebClientBuilder {
         }
         Ok(self)
     }
-    pub fn route(mut self, http_type: HttpMethod, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, Error> {
+    pub fn route(self, http_type: HttpMethod, path: &str, handler: RequestHandler) -> Result<WebClientBuilder, Error> {
         self.route0(http_type.value(), path, handler)
     }
 }
@@ -320,7 +346,6 @@ impl HttpResponse{
         body.push_str("\r\n");
         body.push_str("\r\n");
         body.push_str(self.body.as_str());
-        body.push_str("\r\n");
         body
     }
 }
@@ -331,16 +356,16 @@ mod test{
 
     #[test]
     pub fn test_create_web_client_with_unused_port_successful(){
-        let client = WebClientBuilder::new().port(8000).build();
+        let _client = WebClientBuilder::new().port(8000).build();
     }
     #[test]
     pub fn test_create_web_client_with_used_port_should_fail(){
-        let client = WebClientBuilder::new().port(8000).build();
+        let _client = WebClientBuilder::new().port(8000).build();
         let result = WebClientBuilder::new().port(8000).build();
-        let mut failed = false;
+        let failed;
         match result {
             Ok(_)=>{failed=false;}
-            Err(e)=>{failed = true;}
+            Err(_e)=>{failed = true;}
         }
         assert!(failed)
     }
@@ -348,12 +373,11 @@ mod test{
 
 #[cfg(test)]
 mod link_test{
-    use std::io::Error;
     use crate::web_client::health_check::health_check;
     use crate::web_client::web_client::*;
     #[test]
     pub fn add_handler_successfully(){
-        let client = WebClientBuilder::new().port(8000).route0("GET", "health_check", Box::new(health_check)).unwrap();
+        let _client = WebClientBuilder::new().port(8000).route0("GET", "health_check", Box::new(health_check)).unwrap();
     }
     #[test]
     pub fn add_handler_with_duplicated_url_should_fail(){
@@ -361,10 +385,10 @@ mod link_test{
             .route0("GET", "health_check", Box::new(health_check)).unwrap()
             .route0("GET", "health_check", Box::new(health_check))
             ;
-        let mut failed = false;
+        let failed;
         match client {
             Ok(_) => {failed=false;}
-            Err(e) => {failed=true;}
+            Err(_e) => {failed=true;}
         }
         assert!(failed)
     }

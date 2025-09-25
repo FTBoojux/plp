@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::web_client::utils::web::multipart::MultipartFile;
+use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum FormDataType {
     FString(String),
     Int(i32),
@@ -9,7 +9,7 @@ pub enum FormDataType {
     Float(f64),
     MultipartFile(MultipartFile),
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct FormData {
     data: HashMap<String, Vec<FormDataType>>
 }
@@ -298,8 +298,7 @@ impl FormData {
 }
 
 mod test {
-    use std::collections::HashMap;
-    use crate::web_client::utils::web::form_data::{FormData, FormDataType};
+    use crate::web_client::utils::web::form_data::FormData;
 
     #[test]
     fn query_different_type_data_from_form_data(){

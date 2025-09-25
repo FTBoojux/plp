@@ -1,7 +1,8 @@
-use std::collections::HashMap;
-use crate::web_client::enums::{ContentType, HttpHeadersEnum};
+use crate::web_client::enums::HttpHeadersEnum;
 use crate::web_client::utils::json::bson::JsonType;
 use crate::web_client::utils::web::form_data::FormData;
+use std::collections::HashMap;
+use std::num::ParseIntError;
 
 pub enum RequestError{
     MissingBoundary,
@@ -9,10 +10,11 @@ pub enum RequestError{
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct HttpHeader {
     header: HashMap<String, String>
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct HttpRequest {
     pub method: String,
     pub path: String,
@@ -50,6 +52,39 @@ impl HttpHeader {
         match value {
             None => None,
             Some(value) => Some(value.clone())
+        }
+    }
+    pub fn get(&self, header: &str) -> Option<&String> {
+        self.header.get(header)
+    }
+    pub fn get_as_u32(&self, header: &str) -> Option<u32> {
+        let value = self.header.get(header);
+        match value {
+            None => None,
+            Some(value) => {
+                let value = value.parse::<u32>();
+                match value {
+                    Ok(value) => {Some(value)}
+                    Err(err) => {panic!("Failed to get {} as u32!",header)}
+                }
+            }
+        }
+    }
+}
+pub struct HttpResponse {
+    pub http_version: String,
+    pub status_code: u32,
+    pub response_phrase: String,
+    pub body: String
+}
+
+impl HttpResponse {
+    pub fn create( status_code : u32, response_phrase : String, body : String) -> Self {
+        Self{
+            http_version: String::from("HTTP/1.1"),
+            status_code,
+            response_phrase,
+            body
         }
     }
 }
