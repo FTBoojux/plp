@@ -1,6 +1,6 @@
 package org.example.web.request;
 
-import org.example.handler.*;
+import org.example.handlers.*;
 import org.example.web.WebClient;
 import org.example.web.handlers.HealthCheckHandler;
 import org.example.web.handlers.IdentityCheckHandler;

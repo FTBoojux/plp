@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.handlers;
 
 import org.example.web.RequestHandler;
 import org.example.web.request.HttpRequest;

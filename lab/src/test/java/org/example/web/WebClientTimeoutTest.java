@@ -1,15 +1,9 @@
 package org.example.web;
 
 import framework.FTest;
-import framework.SimpleTestRunner;
-import org.example.handler.HelloWorldHandler;
-import org.example.handler.LoginHandler;
-import org.example.handler.RequestMapHandler;
-import org.example.handler.TimeOutHandler;
-import org.example.web.handlers.HealthCheckHandler;
-import org.example.web.handlers.IdentityCheckHandler;
-import org.example.web.handlers.PathVariableHandler;
-import org.example.web.handlers.QuestionParamHandler;
+import org.example.handlers.HelloWorldHandler;
+import org.example.handlers.LoginHandler;
+import org.example.handlers.TimeOutHandler;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

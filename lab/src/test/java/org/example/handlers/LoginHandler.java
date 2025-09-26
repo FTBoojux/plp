@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.handlers;
 
 import org.example.enums.HTTPEnum;
 import org.example.utils.StringUtils;

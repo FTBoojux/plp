@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.handlers;
 
 import org.example.enums.HTTPEnum;
 import org.example.web.RequestHandler;
@@ -6,7 +6,6 @@ import org.example.web.multipart.MultipartFile;
 import org.example.web.request.HttpRequest;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 

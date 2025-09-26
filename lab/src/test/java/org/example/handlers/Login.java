@@ -1,4 +1,4 @@
-package org.example.handler;
+package org.example.handlers;
 
 public class Login {
     public String getUsername() {

@@ -1,8 +1,7 @@
 package org.example.json;
 
-import org.example.handler.HelloWorldHandler;
-import org.example.handler.LoginHandler;
-import org.example.handler.RequestMapHandler;
+import org.example.handlers.LoginHandler;
+import org.example.handlers.RequestMapHandler;
 import org.example.web.WebClient;
 import org.example.web.handlers.HealthCheckHandler;
 import org.example.web.handlers.IdentityCheckHandler;
