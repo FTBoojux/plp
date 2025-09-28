@@ -46,6 +46,7 @@ impl HttpMethod {
 pub enum HttpHeadersEnum {
     ContentType,
     ContentLength,
+    Cookie,
 }
 
 impl HttpHeadersEnum {
@@ -53,6 +54,8 @@ impl HttpHeadersEnum {
         match self {
             HttpHeadersEnum::ContentType => "Content-Type",
             HttpHeadersEnum::ContentLength => "Content-Length",
+            HttpHeadersEnum::Cookie => "Cookie",
+            _ => panic!("invalid header!")
         }
     }
 }

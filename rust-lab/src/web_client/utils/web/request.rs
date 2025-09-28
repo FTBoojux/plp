@@ -71,7 +71,7 @@ impl HttpHeader {
         }
     }
     pub fn cookie(&self) -> Cookie{
-        let cookie = self.get("Cookie");
+        let cookie = self.get_by_header(HttpHeadersEnum::Cookie);
         if let Some(cookie) = cookie {
             Cookie::from_string(cookie)
         } else {
