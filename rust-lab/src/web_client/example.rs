@@ -46,3 +46,8 @@ pub fn middleware_count(http_request:RequestMatchResult) -> Result<String,std::i
 pub fn illegal_information_handler(match_result: RequestMatchResult) ->Result<String, std::io::Error> {
     Ok(String::from("illegal information"))
 }
+
+pub fn cookie_handler(match_result: RequestMatchResult) -> Result<String, std::io::Error> {
+    let cookie = match_result.request.cookie();
+    Ok(cookie.get("cnt").unwrap_or(String::from("0")).trim().to_string())
+}

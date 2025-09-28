@@ -70,6 +70,14 @@ impl HttpHeader {
             }
         }
     }
+    pub fn cookie(&self) -> Cookie{
+        let cookie = self.get("Cookie");
+        if let Some(cookie) = cookie {
+            Cookie::from_string(cookie)
+        } else {
+            Cookie::new()
+        }
+    }
 }
 pub struct HttpResponse {
     pub http_version: String,
@@ -86,5 +94,71 @@ impl HttpResponse {
             response_phrase,
             body
         }
+    }
+}
+#[derive(Clone, Debug)]
+pub struct Cookie {
+    cookie: HashMap<String, String>
+}
+
+impl Cookie {
+    pub fn new()->Self{
+       Self{
+           cookie: HashMap::new()
+       }
+    }
+    pub fn from_string(cookie:impl Into<String>) -> Self{
+        let _cookie = cookie.into();
+        let _cookies = _cookie.split(';');
+        let mut result = Cookie::new();
+        for cookie in _cookies {
+            if let Some(index) = cookie.find('=') {
+                let key = &cookie[0..index];
+                let value = cookie[index+1..].trim();
+                result.add(key,value);
+            }
+        }
+        result
+    }
+    pub fn add(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.cookie.insert(key.into(),value.into());
+    }
+    pub fn get(&self, key: impl Into<String>) -> Option<String> {
+        match self.cookie.get(key.into().as_str()) {
+            None => {None}
+            Some(value) => {Some(value.to_string())}
+        }
+    }
+}
+
+mod cookie_test {
+    use crate::web_client::utils::web::request::Cookie;
+    use crate::web_client::web_client::HttpHeader;
+
+    #[test]
+    pub fn add_cookie(){
+        let mut cookie = Cookie::new();
+        cookie.add("cookie1","hello");
+    }
+    #[test]
+    pub fn get_cookie(){
+        let mut cookie = Cookie::new();
+        cookie.add("cookie1", "hello");
+        assert_eq!(cookie.get("cookie1"),Some("hello".to_string()));
+    }
+    #[test]
+    pub fn create_cookie_from_raw_string(){
+        let header_cookie = "cookie1=hello;cookie2=Boojux";
+        let cookie:Cookie = Cookie::from_string(header_cookie);
+        assert_eq!(cookie.get("cookie1"),Some("hello".to_string()));
+        assert_eq!(cookie.get("cookie2"),Some("Boojux".to_string()));
+    }
+    #[test]
+    pub fn get_cookie_from_header(){
+        let mut header = HttpHeader::new();
+        header.insert("Cookie","cookie1=hello;cookie2=Boojux".to_string());
+        let cookie = header.cookie();
+        assert_eq!(cookie.get("cookie1"),Some("hello".to_string()));
+        assert_eq!(cookie.get("cookie2"),Some("Boojux".to_string()));
     }
 }

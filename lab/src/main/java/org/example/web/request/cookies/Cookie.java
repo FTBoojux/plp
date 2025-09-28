@@ -26,8 +26,8 @@ public class Cookie {
         this.cookies = _cookies;
     }
     Map<String, String> cookies = new HashMap<>();
-    public void add(String cookie1, String value) {
-        cookies.put(cookie1,value);
+    public void add(String key, String value) {
+        cookies.put(key, value);
     }
 
     public String get(String key) {

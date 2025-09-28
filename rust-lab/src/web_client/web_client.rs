@@ -14,6 +14,7 @@ use std::io;
 use std::io::{BufRead, BufReader, Error, ErrorKind, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
+use crate::web_client::utils::web::request::Cookie;
 
 pub struct WebClient {
     tcp_listener: TcpListener,
@@ -349,7 +350,11 @@ impl HttpResponse{
         body
     }
 }
-
+impl HttpRequest{
+    pub fn cookie(&self) -> Cookie{
+        self.headers.cookie()
+    }
+}
 #[cfg(test)]
 mod test{
     use crate::web_client::web_client::WebClientBuilder;
