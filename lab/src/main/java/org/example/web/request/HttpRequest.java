@@ -1,5 +1,8 @@
 package org.example.web.request;
 
+import org.example.enums.HTTPHeadersEnum;
+import org.example.web.request.cookies.Cookie;
+
 import java.util.HashMap;
 
 public class HttpRequest<T> {
@@ -10,6 +13,7 @@ public class HttpRequest<T> {
     private HashMap<String,String> params;
     private HashMap<String,String> pathVariables;
     private FormData formData;
+    private Cookie cookie;
     private T body;
 
     @Override
@@ -89,6 +93,11 @@ public class HttpRequest<T> {
     }
     public void setFormData(FormData formData) {
         this.formData = formData;
+    }
+    public Cookie getCookie() {
+        String cookie = headers.getByEnum(HTTPHeadersEnum.COOKIE);
+        this.cookie = new Cookie(cookie);
+        return this.cookie;
     }
 
 }

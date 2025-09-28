@@ -3,7 +3,8 @@ package org.example.enums;
 public enum HTTPHeadersEnum {
     CONTENT_TYPE("Content-Type"),
     CONTENT_LENGTH("Content-Length"),
-    BOUNDARY("boundary")
+    BOUNDARY("boundary"),
+    COOKIE("Cookie")
     ;
     private final String header;
 

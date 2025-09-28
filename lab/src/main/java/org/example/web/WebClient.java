@@ -351,19 +351,17 @@ public class WebClient {
             objectHttpRequest.setParams(params);
         }
 
-        int blankIndex = -1;
         HttpHeaders headers = new HttpHeaders();
-        objectHttpRequest.setHeaders(headers);
         for(int i = 1; i < requestLines.size(); i++){
             String trim = requestLines.get(i).trim();
             if(BLANK_STRING.equals(trim)){
-                blankIndex = i;
                 break;
             }else{
                 String[] split = trim.split(": ");
                 headers.put(split[0], split[1]);
             }
         }
+        objectHttpRequest.setHeaders(headers);
         return objectHttpRequest;
     }
 

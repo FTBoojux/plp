@@ -4,7 +4,7 @@
 
 当前目标:
 
-- [ ] 更好的cookies支持 / better cookies supporting
+- [√] 更好的cookies支持 / better cookie supporting
 - [ ] 支持session / support session
 
 引用：
