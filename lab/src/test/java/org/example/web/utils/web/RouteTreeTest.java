@@ -1,6 +1,6 @@
 package org.example.web.utils.web;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleTestRunner;
 import org.example.web.handlers.HealthCheckHandler;
 
@@ -9,7 +9,7 @@ public class RouteTreeTest {
         RouteTreeTest routeTreeTest = new RouteTreeTest();
         new SimpleTestRunner().runAllTests(routeTreeTest);
     }
-    @FTest
+    @Best
     public void bindPathWithPureVariableToHealthCheckSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/{pathVariable}/{pathVariable2}");
         HealthCheckHandler healthCheckHandler = new HealthCheckHandler();
@@ -20,7 +20,7 @@ public class RouteTreeTest {
         System.out.println(routeTree1);
         assert routeTree1.getRequestHandler() == healthCheckHandler;
     }
-    @FTest
+    @Best
     public void bindPathStartWithVariableToHealthCheckSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/{pathVariable}/path");
         HealthCheckHandler healthCheckHandler = new HealthCheckHandler();
@@ -31,7 +31,7 @@ public class RouteTreeTest {
         System.out.println(routeTree1);
         assert routeTree1.getRequestHandler() == healthCheckHandler;
     }
-    @FTest
+    @Best
     public void bindPathEndWithVariableToHealthCheckSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/path/{pathVariable}");
         HealthCheckHandler healthCheckHandler = new HealthCheckHandler();
@@ -42,7 +42,7 @@ public class RouteTreeTest {
         System.out.println(routeTree1);
         assert routeTree1.getRequestHandler() == healthCheckHandler;
     }
-    @FTest
+    @Best
     public void bindPathWithComplexVariableToHealthCheckSuccessfully(){
         RoutePattern parse = RoutePattern.parse("/{pathVariable}/path/{pathVariable2}/path");
         HealthCheckHandler healthCheckHandler = new HealthCheckHandler();
@@ -53,7 +53,7 @@ public class RouteTreeTest {
         System.out.println(routeTree1);
         assert routeTree1.getRequestHandler() == healthCheckHandler;
     }
-    @FTest
+    @Best
     public void testAllFourCase(){
         RouteTree routeTree = new RouteTree("");
 

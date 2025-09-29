@@ -1,7 +1,7 @@
 package org.example.web;
 
-import framework.FTest;
-import framework.FtAssert;
+import framework.Best;
+import framework.Bassert;
 import framework.SimpleTestRunner;
 import org.example.web.utils.http.HttpRequestTemplates;
 import org.example.web.utils.http.HttpRequestUtil;
@@ -16,7 +16,7 @@ public class WebClientPathVariablesTest {
     public static void main(String[] args) {
         new SimpleTestRunner().runAllTests(new WebClientPathVariablesTest());
     }
-    @FTest
+    @Best
     public void testSamePrefixUrl() throws IOException, InterruptedException {
         WebClient webClient = WebClient.build()
                         .bind(8000)
@@ -34,14 +34,14 @@ public class WebClientPathVariablesTest {
         HttpRequest spaceRequest = HttpRequestTemplates.baseGetRequestBuilder("http://127.0.0.1:8000/Boojux/space").build();
         HttpResponse<String> spaceResponse = HttpRequestUtil.httpClient.send(spaceRequest, HttpResponse.BodyHandlers.ofString());
         System.out.println(spaceResponse.body());
-        FtAssert.fAssert(spaceResponse.statusCode() == 200);
-        FtAssert.fAssert(spaceResponse.body().equals("username=Boojux"));
+        Bassert.fAssert(spaceResponse.statusCode() == 200);
+        Bassert.fAssert(spaceResponse.body().equals("username=Boojux"));
 
         HttpRequest goodInfoRequest = HttpRequestTemplates.baseGetRequestBuilder("http://127.0.0.1:8000/iron/goodInfo").build();
         HttpResponse<String> goodInfoResponse = HttpRequestUtil.httpClient.send(goodInfoRequest, HttpResponse.BodyHandlers.ofString());
         System.out.println(goodInfoResponse.body());
-        FtAssert.fAssert(goodInfoResponse.statusCode() == 200);
-        FtAssert.fAssert(goodInfoResponse.body().equals("goodId:iron"));
+        Bassert.fAssert(goodInfoResponse.statusCode() == 200);
+        Bassert.fAssert(goodInfoResponse.body().equals("goodId:iron"));
 
         thread.interrupt();
         webClient.close();

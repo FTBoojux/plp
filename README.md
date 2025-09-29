@@ -5,7 +5,7 @@
 当前目标 / to-do:
 
 - [√] 更好的cookies支持 / better cookie supporting
-- [ ] 更好的支持视图 / better view supporting
+- [√] 更好的支持视图 / better view supporting
 - [ ] 支持session / support session
 
 引用 / reference：

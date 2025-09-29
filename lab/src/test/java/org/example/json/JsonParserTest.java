@@ -1,6 +1,6 @@
 package org.example.json;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleTestRunner;
 import org.example.utils.json.JsonParser;
 
@@ -9,7 +9,7 @@ public class JsonParserTest {
         JsonParserTest jsonParserTest = new JsonParserTest();
         new SimpleTestRunner().runAllTests(jsonParserTest);
     }
-    @FTest
+    @Best
     public void parseJson(){
         String json = """
 {

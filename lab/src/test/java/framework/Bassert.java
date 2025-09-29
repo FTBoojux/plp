@@ -1,6 +1,6 @@
 package framework;
 
-public final class FtAssert {
+public final class Bassert {
     public static void fAssert(boolean condition){
         if(!condition){
             throw new AssertionError();
@@ -11,5 +11,5 @@ public final class FtAssert {
             throw new AssertionError(message);
         }
     }
-    private FtAssert(){}
+    private Bassert(){}
 }

@@ -4,6 +4,7 @@ import org.example.enums.ContentType;
 import org.example.enums.HTTPHeadersEnum;
 import org.example.utils.Fog;
 import org.example.utils.StringUtils;
+import org.example.web.biew.Biew;
 import org.example.web.exceptions.*;
 import org.example.web.middleware.MiddlewareHandler;
 import org.example.web.request.FormData;
@@ -174,7 +175,11 @@ public class WebClient {
                         .statusCode(200)
                         .reasonPhrase("OK");
                 if(!Objects.isNull(responseBody)){
-                    responseBuilder.body(responseBody.toString());
+                    if (responseBody instanceof Biew) {
+                        responseBuilder.body(((Biew) responseBody).parse());
+                    } else {
+                        responseBuilder.body(responseBody.toString());
+                    }
                 }else{
                     responseBuilder.body("");
                 }

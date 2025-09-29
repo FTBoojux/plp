@@ -13,8 +13,8 @@ public class SimpleTestRunner {
         System.out.println("-".repeat(50));
         Method[] declaredMethods = aClass.getDeclaredMethods();
         for (Method m : declaredMethods) {
-            FTest fTest = m.getAnnotation(FTest.class);
-            if(fTest != null){
+            Best best = m.getAnnotation(Best.class);
+            if(best != null){
                 printLine();
                 runTestByMethodName(instance, m);
             }

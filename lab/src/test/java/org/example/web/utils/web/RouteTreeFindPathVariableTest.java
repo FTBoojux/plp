@@ -1,7 +1,7 @@
 package org.example.web.utils.web;
 
-import framework.FTest;
-import framework.FtAssert;
+import framework.Best;
+import framework.Bassert;
 import framework.SimpleTestRunner;
 import org.example.enums.HTTPEnum;
 import org.example.web.handlers.HealthCheckHandler;
@@ -22,7 +22,7 @@ public class RouteTreeFindPathVariableTest {
         System.out.println(matchResult);
         assert matchResult.requestHandler == healthCheckHandler;
     }
-    @FTest
+    @Best
     public void testAllFourCase(){
         RouteTree routeTree = new RouteTree("");
 
@@ -48,22 +48,22 @@ public class RouteTreeFindPathVariableTest {
 
         MatchResult matchResult1 = routeTree.findWithVariable(HTTPEnum.GET.type,"/1/2/path");
         System.out.println(matchResult1);
-        FtAssert.fAssert(matchResult1.requestHandler == healthCheckHandler1);
+        Bassert.fAssert(matchResult1.requestHandler == healthCheckHandler1);
 
         MatchResult matchResult2 = routeTree.findWithVariable(HTTPEnum.GET.type,"/1/path");
         System.out.println(matchResult2);
-        FtAssert.fAssert(matchResult2.requestHandler == healthCheckHandler2);
+        Bassert.fAssert(matchResult2.requestHandler == healthCheckHandler2);
 
         MatchResult matchResult3 = routeTree.findWithVariable(HTTPEnum.GET.type,"/path/1");
         System.out.println(matchResult3);
-        FtAssert.fAssert(matchResult3.requestHandler == healthCheckHandler3);
+        Bassert.fAssert(matchResult3.requestHandler == healthCheckHandler3);
 
         MatchResult matchResult4 = routeTree.findWithVariable(HTTPEnum.GET.type,"/path/path/path/path");
         System.out.println(matchResult4);
-        FtAssert.fAssert(matchResult4.requestHandler == healthCheckHandler4);
+        Bassert.fAssert(matchResult4.requestHandler == healthCheckHandler4);
     }
 
-    @FTest
+    @Best
     public void testSamePrefix(){
         RouteTree routeTree = new RouteTree("");
 
@@ -80,10 +80,10 @@ public class RouteTreeFindPathVariableTest {
 
         MatchResult matchResult1 = routeTree.findWithVariable(HTTPEnum.GET.type,"/Boojux/space");
         System.out.println(matchResult1);
-        FtAssert.fAssert(matchResult1.requestHandler == healthCheckHandler1);
+        Bassert.fAssert(matchResult1.requestHandler == healthCheckHandler1);
 
         MatchResult matchResult2 = routeTree.findWithVariable(HTTPEnum.GET.type,"/Boojux/info");
         System.out.println(matchResult2);
-        FtAssert.fAssert(matchResult2.requestHandler == healthCheckHandler2);
+        Bassert.fAssert(matchResult2.requestHandler == healthCheckHandler2);
     }
 }

@@ -1,7 +1,7 @@
 package org.example.web;
 
-import framework.FTest;
-import framework.FtAssert;
+import framework.Best;
+import framework.Bassert;
 import framework.SimpleTestRunner;
 import org.example.web.exceptions.InvalidRequestBodyException;
 
@@ -12,34 +12,34 @@ public class WebClientRequestBodyParseTest {
         WebClientRequestBodyParseTest obj = new WebClientRequestBodyParseTest();
         new SimpleTestRunner().runAllTests(obj);
     }
-    @FTest
+    @Best
     public void validJsonRequest(){
         String json = "{\"name\":\"Boojux\",\"gender\":\"Transformers\"}";
         char[] charArray = json.toCharArray();
         WebClient webClient = new WebClient();
         HashMap<String, String> map = webClient.parseBody(charArray);
-        FtAssert.fAssert(map.get("name").equals("Boojux"));
-        FtAssert.fAssert(map.get("gender").equals("Transformers"));
+        Bassert.fAssert(map.get("name").equals("Boojux"));
+        Bassert.fAssert(map.get("gender").equals("Transformers"));
     }
-    @FTest
+    @Best
     public void validExtendJson(){
         String json = "{\"name\":\"Boojux\",\"gender\":\"Transformers\",}";
         char[] charArray = json.toCharArray();
         WebClient webClient = new WebClient();
         HashMap<String, String> map = webClient.parseBody(charArray);
-        FtAssert.fAssert(map.get("name").equals("Boojux"));
-        FtAssert.fAssert(map.get("gender").equals("Transformers"));
+        Bassert.fAssert(map.get("name").equals("Boojux"));
+        Bassert.fAssert(map.get("gender").equals("Transformers"));
     }
-    @FTest
+    @Best
     public void validInformalJson(){
         String json = "{\"name\":\"Boojux\",\n  \"gender\":\"Transformers\",}";
         char[] charArray = json.toCharArray();
         WebClient webClient = new WebClient();
         HashMap<String, String> map = webClient.parseBody(charArray);
-        FtAssert.fAssert(map.get("name").equals("Boojux"));
-        FtAssert.fAssert(map.get("gender").equals("Transformers"));
+        Bassert.fAssert(map.get("name").equals("Boojux"));
+        Bassert.fAssert(map.get("gender").equals("Transformers"));
     }
-    @FTest
+    @Best
     public void invalidJsonShouldFail(){
         String json = "{\"name\":\"Boojux\",\n  \"gender\":\"Transformers}";
         char[] charArray = json.toCharArray();
@@ -50,7 +50,7 @@ public class WebClientRequestBodyParseTest {
         } catch (InvalidRequestBodyException e) {
             fail = true;
         }
-        FtAssert.fAssert(fail,"invalid json should fail");
+        Bassert.fAssert(fail,"invalid json should fail");
     }
 
 }

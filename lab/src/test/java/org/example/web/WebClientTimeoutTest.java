@@ -1,6 +1,6 @@
 package org.example.web;
 
-import framework.FTest;
+import framework.Best;
 import org.example.handlers.HelloWorldHandler;
 import org.example.handlers.LoginHandler;
 import org.example.handlers.TimeOutHandler;
@@ -18,7 +18,7 @@ public class WebClientTimeoutTest {
                 .addHandler(new HelloWorldHandler())
                 .listen();
     }
-    @FTest
+    @Best
     public void launchWithTimeOut(){
 
     }

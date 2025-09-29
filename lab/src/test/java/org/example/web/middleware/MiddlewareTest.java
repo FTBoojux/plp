@@ -1,7 +1,7 @@
 package org.example.web.middleware;
 
-import framework.FTest;
-import framework.FtAssert;
+import framework.Best;
+import framework.Bassert;
 import framework.SimpleTestRunner;
 import org.example.utils.Fog;
 import org.example.web.RequestHandler;
@@ -36,21 +36,21 @@ public class MiddlewareTest {
         webClient.close();
         thread.interrupt();
     }
-    @FTest
+    @Best
     public void addPreMiddlewareToWebClient() throws IOException {
         FirstMiddleware middleware = new FirstMiddleware();
         WebClient client = WebClient.build().bind(8000)
                 .addPreMiddleware(middleware);
-        FtAssert.fAssert(client.getPreMiddlewares().contains(middleware));
+        Bassert.fAssert(client.getPreMiddlewares().contains(middleware));
     }
-    @FTest
+    @Best
     public void addPostMiddlewareToWebClient() {
         FirstMiddleware middleware = new FirstMiddleware();
         WebClient client = WebClient.build().bind(8000)
                 .addPostHandler(middleware);
-        FtAssert.fAssert(client.getPostMiddlewares().contains(middleware));
+        Bassert.fAssert(client.getPostMiddlewares().contains(middleware));
     }
-    @FTest
+    @Best
     public void middlewareCanModifyTheRequest() throws InterruptedException, IOException {
         HttpRequest request = HttpRequestTemplates
                 .baseGetRequestBuilder("http://127.0.0.1:8000/middlewareCount")
@@ -59,9 +59,9 @@ public class MiddlewareTest {
                 .send(request, HttpResponse.BodyHandlers.ofString());
         String response = httpResponse.body();
         int i = Integer.parseInt(response);
-        FtAssert.fAssert(i==2,"middleware should modify the request!");
+        Bassert.fAssert(i==2,"middleware should modify the request!");
     }
-    @FTest
+    @Best
     public void middlewareCanReturnTheRequest() throws InterruptedException, IOException {
         HttpRequest request = HttpRequestTemplates
                 .baseGetRequestBuilder("http://127.0.0.1:8000/middlewareCount")
@@ -69,18 +69,18 @@ public class MiddlewareTest {
                 .build();
         HttpResponse<String> httpResponse = HttpRequestUtil.httpClient
                 .send(request, HttpResponse.BodyHandlers.ofString());
-        FtAssert.fAssert(httpResponse.statusCode() == 403,
+        Bassert.fAssert(httpResponse.statusCode() == 403,
                 "request with cnt should be intercepted"
                 );
     }
-    @FTest
+    @Best
     public void postMiddlewareCanReturnTheRequest() throws IOException, InterruptedException {
         HttpRequest request = HttpRequestTemplates
                 .baseGetRequestBuilder("http://127.0.0.1:8000/illegal")
                 .build();
         HttpResponse<String> httpResponse = HttpRequestUtil.httpClient
                 .send(request, HttpResponse.BodyHandlers.ofString());
-        FtAssert.fAssert(httpResponse.statusCode() == 401,
+        Bassert.fAssert(httpResponse.statusCode() == 401,
                 "response with illegal information should be intercepted"
         );
     }

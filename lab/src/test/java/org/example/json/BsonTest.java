@@ -1,6 +1,6 @@
 package org.example.json;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleTestRunner;
 import org.example.utils.json.Bson;
 
@@ -9,7 +9,7 @@ public class BsonTest {
         BsonTest bsonTest = new BsonTest();
         new SimpleTestRunner().runAllTests(bsonTest);
     }
-    @FTest
+    @Best
     public void convertToSpecificClass(){
         String json = """
 {"username":"Boojux","userId":"b001","detail":{
@@ -25,7 +25,7 @@ public class BsonTest {
         User deserialize = Bson.deserializeFromJson(json, User.class);
         System.out.println(deserialize);
     }
-    @FTest
+    @Best
     public void convertToSpecificClassWithNull(){
         String json = """
 {"username":"Boojux","userId":"b001"}

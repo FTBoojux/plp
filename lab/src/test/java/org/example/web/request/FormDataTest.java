@@ -1,6 +1,6 @@
 package org.example.web.request;
 
-import framework.FtAssert;
+import framework.Bassert;
 import org.example.utils.CollectionUtils;
 import org.example.utils.StringUtils;
 
@@ -26,25 +26,25 @@ public class FormDataTest {
         formData.put("paid","true");
 
         String name = formData.getString("name");
-        FtAssert.fAssert(StringUtils.equals(name, "Boojux"));
+        Bassert.fAssert(StringUtils.equals(name, "Boojux"));
 
         String sex = formData.getString("sex");
-        FtAssert.fAssert(StringUtils.equals(sex, "male"));
+        Bassert.fAssert(StringUtils.equals(sex, "male"));
 
         Integer age = formData.getInteger("age");
-        FtAssert.fAssert(age == 1);
+        Bassert.fAssert(age == 1);
 
         double height = formData.getDouble("height");
-        FtAssert.fAssert(height==172.3);
+        Bassert.fAssert(height==172.3);
 
         List<String> categories = formData.getAll("categories", String.class);
-        FtAssert.fAssert(!CollectionUtils.isEmpty(categories));
+        Bassert.fAssert(!CollectionUtils.isEmpty(categories));
 
         List<Item> items = formData.getAll("items", Item.class);
-        FtAssert.fAssert(!CollectionUtils.isEmpty(items));
+        Bassert.fAssert(!CollectionUtils.isEmpty(items));
 
         Boolean paid = formData.getBoolean("paid");
-        FtAssert.fAssert(paid);
+        Bassert.fAssert(paid);
     }
     static class Item{
         private String address;

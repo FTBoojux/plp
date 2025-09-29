@@ -1,6 +1,6 @@
 package org.example.web;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleTestRunner;
 import org.example.web.handlers.HealthCheckHandler;
 import org.example.web.handlers.PathVariableHandler;
@@ -11,13 +11,12 @@ import org.example.web.utils.http.HttpRequestUtil;
 import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class WebClientGetParamTest {
     public static void main(String[] args) {
         new SimpleTestRunner().runAllTests(new WebClientGetParamTest());
     }
-    @FTest
+    @Best
     public void testSendRequestWithQuestionParam() throws IOException, InterruptedException {
         WebClient webClient;
         webClient = WebClient
@@ -41,7 +40,7 @@ public class WebClientGetParamTest {
         thread.interrupt();
         webClient.close();
     }
-    @FTest
+    @Best
     public void sendRequestWithPathVariables() throws IOException, InterruptedException {
         WebClient webClient;
         webClient = WebClient

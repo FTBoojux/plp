@@ -1,6 +1,6 @@
 package org.example.web;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleTestRunner;
 import org.example.web.exceptions.PortUsedException;
 
@@ -9,13 +9,13 @@ public class WebClientCreateTest {
         WebClientCreateTest webClientCreateTest = new WebClientCreateTest();
         new SimpleTestRunner().runAllTests(webClientCreateTest);
     }
-    @FTest
+    @Best
     public void createWebClientWithUnusedPort(){
         WebClient client = WebClient.build().bind(8000);
         assert client != null;
         client.close();
     }
-    @FTest
+    @Best
     public void testCreateWebClientWithUsedPort(){
         int port = 8001;
         boolean catched = false;

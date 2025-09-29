@@ -1,6 +1,6 @@
 package org.example.web;
 
-import framework.FTest;
+import framework.Best;
 import framework.SimpleRandomPathStressTest;
 import framework.SimpleStressTest;
 import framework.SimpleTestRunner;
@@ -26,7 +26,7 @@ public class WebClientStressTest {
         System.out.println("+".repeat(23)+"预热结束"+"*".repeat(23));
         System.out.println(LINE);
     }
-    @FTest
+    @Best
     public void testDynamicPath() throws InterruptedException {
         WebClientStressTest clientStressTest = new WebClientStressTest();
         for(int i = 100; i <= 200; i+=10){
@@ -34,7 +34,7 @@ public class WebClientStressTest {
             System.out.println(LINE);
         }
     }
-    @FTest
+    @Best
     public void testStaticPath() throws InterruptedException {
         WebClientStressTest clientStressTest = new WebClientStressTest();
         for(int i = 100; i <= 200; i+=10){

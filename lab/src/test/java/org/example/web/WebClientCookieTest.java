@@ -1,7 +1,7 @@
 package org.example.web;
 
-import framework.FTest;
-import framework.FtAssert;
+import framework.Best;
+import framework.Bassert;
 import framework.SimpleTestRunner;
 import org.example.utils.StringUtils;
 import org.example.web.request.HttpRequest;
@@ -26,14 +26,14 @@ public class WebClientCookieTest {
         Thread.sleep(1000);
         new SimpleTestRunner().runAllTests(new WebClientCookieTest());
     }
-    @FTest
+    @Best
     public void requestWithCookie() {
         java.net.http.HttpRequest request = HttpRequestTemplates.baseGetRequestBuilder("http://127.0.0.1:8000/cookie")
                 .header("Cookie", "cnt=1")
                 .build();
         try {
             HttpResponse<String> response = HttpRequestUtil.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            FtAssert.fAssert(StringUtils.equals(response.body(),"1"), "cnt returned should equal to 1!");
+            Bassert.fAssert(StringUtils.equals(response.body(),"1"), "cnt returned should equal to 1!");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
