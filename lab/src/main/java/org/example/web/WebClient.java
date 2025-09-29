@@ -174,15 +174,7 @@ public class WebClient {
                 responseBuilder
                         .statusCode(200)
                         .reasonPhrase("OK");
-                if(!Objects.isNull(responseBody)){
-                    if (responseBody instanceof Biew) {
-                        responseBuilder.body(((Biew) responseBody).parse());
-                    } else {
-                        responseBuilder.body(responseBody.toString());
-                    }
-                }else{
-                    responseBuilder.body("");
-                }
+                responseBuilder.body(responseBody);
                 postHande(request,responseBuilder);
                 String response = responseBuilder.build();
                 outputStream.write(response.getBytes());

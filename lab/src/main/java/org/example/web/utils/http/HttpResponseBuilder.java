@@ -1,7 +1,10 @@
 package org.example.web.utils.http;
 
+import org.example.web.biew.Biew;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class HttpResponseBuilder {
     private String httpVersion =  "HTTP/1.1";
@@ -61,6 +64,17 @@ public class HttpResponseBuilder {
         }
         this.headers.putAll(headers);
         return this;
+    }
+    public void body(Object body){
+        if(!Objects.isNull(body)){
+            if (body instanceof Biew) {
+                body(((Biew) body).parse());
+            } else {
+                body(body.toString());
+            }
+        }else{
+            body("");
+        }
     }
     public String build(){
         StringBuilder sb = new StringBuilder();
