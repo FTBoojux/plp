@@ -1,6 +1,7 @@
 package org.example.web.utils.http;
 
 import org.example.web.biew.Biew;
+import org.example.web.request.HttpHeaders;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class HttpResponseBuilder {
     }
 
     private String reasonPhrase = "OK";
-    private Map<String, String> headers;
+    private HttpHeaders headers;
     private String body = "";
 
     public HttpResponseBuilder httpVersion(String httpVersion){
@@ -53,14 +54,14 @@ public class HttpResponseBuilder {
     }
     public HttpResponseBuilder addHeader(String key, String value){
         if(headers == null){
-            headers = new HashMap<>();
+            headers = new HttpHeaders();
         }
         headers.put(key, value);
         return this;
     }
     public HttpResponseBuilder addHeaders(Map<String, String> headers){
         if(this.headers == null){
-            this.headers = new HashMap<>();
+            this.headers = new HttpHeaders();
         }
         this.headers.putAll(headers);
         return this;

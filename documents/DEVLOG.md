@@ -37,3 +37,12 @@ support transfer data  in the format of form-data and x-www-form-urlencoded
 增加了拦截器，支持请求前和请求后处理
 
 add interceptor and now support preHandler and postHandler
+
+[细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250923.interceptor.md)
+
+### 2025-09-29
+优化了对视图类的支持
+
+optimized view support
+
+[细节](https://github.com/FTBoojux/plp/blob/main/documents/DevelopmentJournal/250929.view.md)
