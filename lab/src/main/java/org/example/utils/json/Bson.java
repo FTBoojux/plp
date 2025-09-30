@@ -19,6 +19,9 @@ public class Bson {
         return (T) deserialize(obj, typeReference);
     }
     public static Object deserialize(Object obj, TypeReference typeReference) {
+        if (obj == null) {
+            return null;
+        }
         Type type = typeReference.getType();
         Class<?> clz = null;
         if (type instanceof ParameterizedType){
@@ -169,6 +172,6 @@ public class Bson {
     }
 
     public static String serializeToJson(Object object) {
-        return "{}";
+        return new JsonSerializer(object).get();
     }
 }
