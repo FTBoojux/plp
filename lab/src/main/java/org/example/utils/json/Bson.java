@@ -167,4 +167,8 @@ public class Bson {
     private static JsonParser getJsonParser() {
         return new JsonParser();
     }
+
+    public static String serializeToJson(Object object) {
+        return "{}";
+    }
 }
