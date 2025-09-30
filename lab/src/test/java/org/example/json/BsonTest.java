@@ -9,7 +9,9 @@ import org.example.utils.json.Bson;
 import org.example.utils.json.TypeReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BsonTest {
     public static void main(String[] args) {
@@ -113,6 +115,17 @@ public class BsonTest {
         item.setStringItem("2");
         list.add(item);
         object.setObjList(list);
+        String json = Bson.serializeToJson(object);
+        System.out.println(json);
+        Example objectParsed = Bson.deserializeFromJson(json, Example.class);
+        Bassert.fAssert(object.equals(objectParsed),"object with int item should equal to source object");
+    }
+    @Best
+    public void parseObjectWithMap(){
+        Example object = new Example();
+        Map<String, String> map = new HashMap<>();
+        map.put("key","value");
+        object.setMap(map);
         String json = Bson.serializeToJson(object);
         System.out.println(json);
         Example objectParsed = Bson.deserializeFromJson(json, Example.class);

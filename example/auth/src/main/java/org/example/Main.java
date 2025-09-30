@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.handlers.BiewHandler;
+import org.example.handlers.CookieHandler;
 import org.example.handlers.FrontPageHandler;
 import org.example.handlers.PrivateHandler;
 import org.example.interceptors.AuthInterceptor;
@@ -15,6 +16,7 @@ public class Main {
                 .addHandler(new FrontPageHandler())
                 .addHandler(new PrivateHandler())
                 .addHandler(new BiewHandler())
+                .addHandler(new CookieHandler())
                 .listen();
     }
 }

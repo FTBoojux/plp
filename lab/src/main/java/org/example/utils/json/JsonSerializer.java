@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class JsonSerializer {
     StringBuilder sb = new StringBuilder();
@@ -42,8 +43,23 @@ public class JsonSerializer {
             case Number number -> sb.append(String.format("%s", obj));
             case Boolean bool -> sb.append(String.format("%s",obj));
             case List<?> list -> appendList(list);
+            case Map<?,?> map -> appendMap(map);
             case Object object -> addObject(obj);
         }
+    }
+
+    private void appendMap(Map<?, ?> map) {
+        sb.append("{");
+        Iterator<? extends Map.Entry<?, ?>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<?, ?> entry = iterator.next();
+            sb.append(String.format("\"%s\":",entry.getKey()));
+            append(entry.getValue());
+            if (iterator.hasNext()) {
+                sb.append(",");
+            }
+        }
+        sb.append("}");
     }
 
     private void appendList(List<?> list) {

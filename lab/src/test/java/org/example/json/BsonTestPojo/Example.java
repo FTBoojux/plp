@@ -1,6 +1,7 @@
 package org.example.json.BsonTestPojo;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Example {
@@ -70,17 +71,27 @@ public class Example {
         this.child = child;
     }
 
+    private Example child;
+
+    public Map<String, String> getMap() {
+        return map;
+    }
+
+    public void setMap(Map<String, String> map) {
+        this.map = map;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (object == null || getClass() != object.getClass()) return false;
         Example example = (Example) object;
-        return Objects.equals(stringItem, example.stringItem) && Objects.equals(bool, example.bool) && Objects.equals(numberItem, example.numberItem) && Objects.equals(list, example.list) && Objects.equals(objList, example.objList) && Objects.equals(child, example.child);
+        return Objects.equals(stringItem, example.stringItem) && Objects.equals(bool, example.bool) && Objects.equals(numberItem, example.numberItem) && Objects.equals(list, example.list) && Objects.equals(objList, example.objList) && Objects.equals(child, example.child) && Objects.equals(map, example.map);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(stringItem, bool, numberItem, list, objList, child);
+        return Objects.hash(stringItem, bool, numberItem, list, objList, child, map);
     }
 
-    private Example child;
+    private Map<String, String> map;
 }

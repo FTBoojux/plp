@@ -1,5 +1,8 @@
 package org.example.web.utils.http;
 
+import org.example.enums.ContentType;
+import org.example.enums.HTTPEnum;
+import org.example.enums.HTTPHeadersEnum;
 import org.example.web.biew.Biew;
 import org.example.web.request.HttpHeaders;
 
