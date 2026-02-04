@@ -1,4 +1,4 @@
-package org.exampl;
+package org.example;
 
 public class BedisBuilder {
     private int port = 6379;

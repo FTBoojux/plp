@@ -1,4 +1,4 @@
-package org.exampl;
+package org.example;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -7,8 +7,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class Bedis {
     private final Logger logger = LoggerFactory.getLogger(Bedis.class);

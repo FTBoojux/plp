@@ -12,6 +12,7 @@
         <module>auth</module>
         <module>demo-comment</module>
         <module>virtual-thread</module>
+        <module>EmbeddedChannelInNetty</module>
     </modules>
 
     <properties>
