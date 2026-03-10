@@ -77,12 +77,12 @@ mod test{
             None => {}
             Some(multipart_file) => {
                 let filename = &multipart_file.filename;
-                let suffix = filename.split(".").last().unwrap();
-                let file_path = format!("D:\\tmp\\\\{}.{}",
-                                        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
-                                        suffix);
-                let path = Path::new(file_path.as_str());
-                let file = File::create(path);
+                let mut file_path = std::env::temp_dir();
+                let suffix = filename.split(".").last().unwrap_or("tmp");
+                file_path.push(format!("{}.{}", 
+                    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+                    suffix));
+                let file = File::create(&file_path);
                 if file.is_err() { panic!() }
                 let result= file?.write(&multipart_file.bytes);
                 if result.is_err() { panic!() }
