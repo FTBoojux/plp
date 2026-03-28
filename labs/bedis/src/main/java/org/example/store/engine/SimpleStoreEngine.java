@@ -36,11 +36,10 @@ public class SimpleStoreEngine implements StoreEngine{
         StorageEntry valueEntry = concurrentHashMap.get(key);
         if (Objects.isNull(valueEntry)) {
             return Optional.empty();
+        } else if (expired(valueEntry)) {
+            delete(key);
+            return Optional.empty();
         } else {
-            if (expired(valueEntry)) {
-                delete(key);
-                return Optional.empty();
-            }
             return Optional.of(valueEntry.value());
         }
     }
