@@ -5,8 +5,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleStoreEngineTest {
     public SimpleStoreEngine createStoreEngine() {
@@ -14,6 +19,7 @@ public class SimpleStoreEngineTest {
     }
 
     private static final String KEY_FOR_TEST = "key";
+    private static final String KEY_FOR_EXPIRED = "keyForExpired";
     private static final String KEY_NOT_EXISTED = "keyNotExisted";
     private static final byte[] VALUE_FOR_TEST = "value".getBytes(StandardCharsets.UTF_8);
     private static final byte[] VALUE_FOR_REPLICATE_SET = "value2".getBytes(StandardCharsets.UTF_8);
@@ -56,5 +62,50 @@ public class SimpleStoreEngineTest {
         Optional<byte[]> value = storeEngine.get(KEY_FOR_TEST);
         Assertions.assertTrue(value.isPresent());
         Assertions.assertArrayEquals(VALUE_FOR_REPLICATE_SET,value.get());
+    }
+    @Test
+    public void set_key_with_expire_time() {
+        SimpleStoreEngine storeEngine = getSimpleStoreEngineAndSetTestKey();
+        Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        storeEngine.setClock(clock);
+
+        storeEngine.set(KEY_FOR_EXPIRED, VALUE_FOR_TEST, 1, TimeUnit.MINUTES);
+        Optional<byte[]> value = storeEngine.get(KEY_FOR_EXPIRED);
+        Assertions.assertTrue(value.isPresent());
+        Assertions.assertArrayEquals(VALUE_FOR_TEST, value.get());
+    }
+    @Test
+    public void should_get_empty_after_key_expired() {
+        SimpleStoreEngine storeEngine = getSimpleStoreEngineAndSetTestKey();
+        Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        storeEngine.setClock(clock);
+        storeEngine.set(KEY_FOR_EXPIRED,VALUE_FOR_TEST,1,TimeUnit.MINUTES);
+
+        Optional<byte[]> value = storeEngine.get(KEY_FOR_EXPIRED);
+        Assertions.assertTrue(value.isPresent());
+        Assertions.assertArrayEquals(VALUE_FOR_TEST, value.get());
+
+        Duration duration_of_one_minute = Duration.ofMinutes(1).plusSeconds(1);
+        clock = Clock.offset(clock, duration_of_one_minute);
+        storeEngine.setClock(clock);
+        value = storeEngine.get(KEY_FOR_EXPIRED);
+        Assertions.assertTrue(value.isEmpty());
+    }
+    @Test
+    public void should_remove_from_engine_after_entry_expired() {
+        SimpleStoreEngine storeEngine = getSimpleStoreEngineAndSetTestKey();
+        Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        storeEngine.setClock(clock);
+        storeEngine.set(KEY_FOR_EXPIRED,VALUE_FOR_TEST,1,TimeUnit.MINUTES);
+
+        Optional<byte[]> value = storeEngine.get(KEY_FOR_EXPIRED);
+        Assertions.assertTrue(value.isPresent());
+        Assertions.assertArrayEquals(VALUE_FOR_TEST, value.get());
+
+        Duration duration_of_one_minute = Duration.ofMinutes(1).plusSeconds(1);
+        clock = Clock.offset(clock, duration_of_one_minute);
+        storeEngine.setClock(clock);
+        storeEngine.get(KEY_FOR_EXPIRED);
+        Assertions.assertFalse(storeEngine.concurrentHashMap.containsKey(KEY_FOR_EXPIRED));
     }
 }

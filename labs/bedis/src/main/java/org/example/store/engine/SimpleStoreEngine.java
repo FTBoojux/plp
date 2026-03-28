@@ -1,10 +1,16 @@
 package org.example.store.engine;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleStoreEngine implements StoreEngine{
+    private Clock clock = Clock.systemDefaultZone();
     ConcurrentHashMap<String, StorageEntry> concurrentHashMap = new ConcurrentHashMap<>();
     @Override
     public boolean set(String key, byte[] value) {
@@ -17,8 +23,12 @@ public class SimpleStoreEngine implements StoreEngine{
     }
 
     @Override
-    public boolean set(String key, byte[] value, long expireTime, long timeUnit) {
-        return false;
+    public boolean set(String key, byte[] value, long expireTime, TimeUnit timeUnit) {
+        Duration duration = Duration.of(expireTime, timeUnit.toChronoUnit());
+        Clock expireAt = Clock.offset(clock, duration);
+        StorageEntry entry = new StorageEntry(value, expireAt.millis());
+        concurrentHashMap.put(key, entry);
+        return true;
     }
 
     @Override
@@ -27,17 +37,33 @@ public class SimpleStoreEngine implements StoreEngine{
         if (Objects.isNull(valueEntry)) {
             return Optional.empty();
         } else {
+            if (expired(valueEntry)) {
+                delete(key);
+                return Optional.empty();
+            }
             return Optional.of(valueEntry.value());
         }
     }
 
+    private boolean expired(StorageEntry valueEntry) {
+        if(valueEntry == null) {
+            return true;
+        }
+        return valueEntry.hasExpire() && valueEntry.expireTime() < clock.millis();
+    }
+
     @Override
     public boolean delete(String key) {
-        return false;
+        concurrentHashMap.remove(key);
+        return true;
     }
 
     @Override
     public boolean exist(String key) {
         return false;
+    }
+
+    public void setClock(Clock clock) {
+        this.clock = clock;
     }
 }
