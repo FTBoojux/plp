@@ -8,7 +8,7 @@
 - [√] 更好的支持视图 / better view supporting
 
 Bedis / to-do:
-- [] GET/SET/DELETE
+- [√] GET/SET/DELETE
 - [] 支持过期策略 / Expiration
 - [] INCR/DECR 原子操作 / atomic operations
 - [] NX flag 
