@@ -2,14 +2,12 @@ package org.example.store.engine;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class SimpleStoreEngine implements StoreEngine{
+public class ComputeSimpleStoreEngine implements StoreEngine {
     private Clock clock = Clock.systemDefaultZone();
     ConcurrentHashMap<String, StorageEntry> concurrentHashMap = new ConcurrentHashMap<>();
     @Override
@@ -33,15 +31,19 @@ public class SimpleStoreEngine implements StoreEngine{
 
     @Override
     public Optional<byte[]> get(String key) {
-        StorageEntry valueEntry = concurrentHashMap.get(key);
-        if (Objects.isNull(valueEntry)) {
-            return Optional.empty();
-        } else if (expired(valueEntry)) {
-            concurrentHashMap.remove(key, valueEntry);
-            return Optional.empty();
-        } else {
-            return Optional.of(valueEntry.value());
-        }
+        StorageEntry entry = concurrentHashMap.compute(key, (k, oldEntry) -> {
+            if (oldEntry == null) {
+                return null;
+            }
+            if (expired(oldEntry)) {
+                return null; // 返回null的话，在操作结束后一起删除这个entry
+            }
+            return oldEntry; // 返回不是null的值，表示维持已有的值
+        });
+
+        return entry == null
+                ? Optional.empty()
+                : Optional.of(entry.value());
     }
 
     private boolean expired(StorageEntry valueEntry) {

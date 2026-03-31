@@ -2,14 +2,12 @@ package org.example.store.engine;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class SimpleStoreEngine implements StoreEngine{
+public class UnsafeSimpleStoreEngine implements StoreEngine{
     private Clock clock = Clock.systemDefaultZone();
     ConcurrentHashMap<String, StorageEntry> concurrentHashMap = new ConcurrentHashMap<>();
     @Override
@@ -37,14 +35,14 @@ public class SimpleStoreEngine implements StoreEngine{
         if (Objects.isNull(valueEntry)) {
             return Optional.empty();
         } else if (expired(valueEntry)) {
-            concurrentHashMap.remove(key, valueEntry);
+            concurrentHashMap.remove(key);
             return Optional.empty();
         } else {
             return Optional.of(valueEntry.value());
         }
     }
 
-    private boolean expired(StorageEntry valueEntry) {
+    protected boolean expired(StorageEntry valueEntry) {
         if(valueEntry == null) {
             return true;
         }
