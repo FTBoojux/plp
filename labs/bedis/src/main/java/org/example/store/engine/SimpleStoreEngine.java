@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,5 +64,18 @@ public class SimpleStoreEngine implements StoreEngine{
 
     public void setClock(Clock clock) {
         this.clock = clock;
+    }
+
+    /**
+     *
+     */
+    public void cleanup() {
+        for (Map.Entry<String, StorageEntry> entry : concurrentHashMap.entrySet()) {
+            String key = entry.getKey();
+            StorageEntry value = entry.getValue();
+            if(expired(value)) {
+                concurrentHashMap.remove(key,value);
+            }
+        }
     }
 }
