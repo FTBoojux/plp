@@ -9,4 +9,6 @@ public interface StoreEngine{
     Optional<byte[]> get(String key);
     boolean delete(String key);
     boolean exist(String key);
+
+    void cleanup();
 }
