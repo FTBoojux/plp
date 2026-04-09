@@ -5,6 +5,8 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.example.store.engine.FullScanExpirationScheduler;
+import org.example.store.engine.SimpleStoreEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,9 @@ public class Bedis {
 
     private void setBootstrap() {
         serverBootstrap = new ServerBootstrap();
+        final SimpleStoreEngine storeEngine = new SimpleStoreEngine();
+        final FullScanExpirationScheduler scheduler = new FullScanExpirationScheduler(storeEngine);
+        scheduler.start();
         serverBootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {

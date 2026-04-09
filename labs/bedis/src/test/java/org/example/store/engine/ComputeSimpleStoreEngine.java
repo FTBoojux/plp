@@ -63,6 +63,11 @@ public class ComputeSimpleStoreEngine implements StoreEngine {
         return false;
     }
 
+    @Override
+    public void cleanup() {
+        throw new UnsupportedOperationException("cleanup is not implemented!");
+    }
+
     public void setClock(Clock clock) {
         this.clock = clock;
     }
