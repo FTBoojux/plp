@@ -11,9 +11,12 @@ import java.util.List;
 public class CommandDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        ByteBuf byteBuf = in.readBytes(in.readableBytes());
-        String string = byteBuf.toString(StandardCharsets.UTF_8);
+        int readerIndex = in.readerIndex();
+        int readableBytes = in.readableBytes();
+        byte[] byteArray = new byte[readableBytes];
+        in.readBytes(byteArray);
+        String string = new String(byteArray);
         out.add(string);
-        byteBuf.release();
+        throw new UnsupportedOperationException("This function has not be impleted");
     }
 }
