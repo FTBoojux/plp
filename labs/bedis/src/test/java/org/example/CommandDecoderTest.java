@@ -8,17 +8,21 @@ import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CommandDecoderTest {
     @Test
     public void completed_command_should_be_consumed_and_parsed() {
         EmbeddedChannel channel = createEmbeddedChannel();
         String parsedRESP = CommandParser.parseRESP("SET", "key", "val");
+        List<String> expectedList = Arrays.asList("SET", "key", "val");
         ByteBuf input = Unpooled.wrappedBuffer(parsedRESP.getBytes());
         channel.writeInbound(input);
 
-        String o = channel.readInbound();
+        List<String> o = channel.readInbound();
         Assertions.assertNotNull(o);
-        Assertions.assertEquals(parsedRESP,o);
+        Assertions.assertEquals(expectedList, o);
     }
 
     private static @NonNull EmbeddedChannel createEmbeddedChannel() {
@@ -30,6 +34,7 @@ public class CommandDecoderTest {
     public void partial_command_completes_when_remaining_bytes_arrive() {
         EmbeddedChannel channel = createEmbeddedChannel();
         String completedRespCommand = CommandParser.parseRESP("SET", "key", "val");
+        List<String> expectedList = Arrays.asList("SET", "key", "val");
         String incompletedRespCommand = completedRespCommand.substring(0, completedRespCommand.length() - 1);
         String remainingRespCommand = completedRespCommand.substring(completedRespCommand.length() - 1);
 
@@ -42,8 +47,8 @@ public class CommandDecoderTest {
         ByteBuf remainingInput = Unpooled.wrappedBuffer(remainingRespCommand.getBytes());
         channel.writeInbound(remainingInput);
 
-        Object completedOutput = channel.readInbound();
+        List<String> completedOutput = channel.readInbound();
         Assertions.assertNotNull(completedOutput);
-        Assertions.assertEquals(completedRespCommand, completedOutput);
+        Assertions.assertEquals(expectedList, completedOutput);
     }
 }

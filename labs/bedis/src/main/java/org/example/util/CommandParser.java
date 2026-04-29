@@ -7,7 +7,7 @@ import io.netty.buffer.Unpooled;
 import java.util.Objects;
 
 public class CommandParser {
-    public static final String BOUNDARY = "\\r\\n";
+    public static final String BOUNDARY = "\r\n";
     public static ByteBuf respBytes(String string) {
         return Unpooled.wrappedBuffer(Objects.requireNonNullElse(string, "").getBytes());
     }

@@ -19,12 +19,12 @@ public class CommandParserTest {
     public void convert_batch_string_args() {
         String parsedString = CommandParser.parseRESP("SET","KEY","VAL");
         Assertions.assertEquals(
-            "*3\\r\\n$3\\r\\nSET\\r\\n$3\\r\\nKEY\\r\\n$3\\r\\nVAL\\r\\n",
+            "*3\r\n$3\r\nSET\r\n$3\r\nKEY\r\n$3\r\nVAL\r\n",
                 parsedString
         );
         String anotherString = CommandParser.parseRESP("SET","KEY","VAL","100");
         Assertions.assertEquals(
-                "*4\\r\\n$3\\r\\nSET\\r\\n$3\\r\\nKEY\\r\\n$3\\r\\nVAL\\r\\n$3\\r\\n100\\r\\n",
+                "*4\r\n$3\r\nSET\r\n$3\r\nKEY\r\n$3\r\nVAL\r\n$3\r\n100\r\n",
                 anotherString
         );
     }
