@@ -5,6 +5,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import org.example.handlers.KvStoreHandler;
+import org.example.store.Command.CommandDispatcher;
 import org.example.store.engine.FullScanExpirationScheduler;
 import org.example.store.engine.SimpleStoreEngine;
 import org.slf4j.Logger;
@@ -47,7 +52,14 @@ public class Bedis {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
-
+                        CommandDispatcher commandDispatcher = new CommandDispatcher(storeEngine);
+                        socketChannel.pipeline()
+                                .addLast(new HttpServerCodec())
+                                .addLast(new HttpObjectAggregator(65535))
+                                .addLast(new WebSocketServerProtocolHandler("/ws"))
+                                .addLast(new CommandDecoder())
+                                .addLast(new KvStoreHandler(commandDispatcher))
+                                ;
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, 128)

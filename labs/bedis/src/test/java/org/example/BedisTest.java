@@ -35,4 +35,10 @@ class BedisTest {
         },"should throw BindException when use bound port");
     }
 
+    public static void main(String[] args) {
+        Bedis.builder()
+                .port(6379)
+                .build()
+                .run();
+    }
 }
