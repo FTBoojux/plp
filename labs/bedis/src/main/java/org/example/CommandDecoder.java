@@ -4,51 +4,27 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.MessageToMessageDecoder;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.example.exceptions.NotEnoughDataException;
 import org.example.exceptions.ProtocolViolationException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class CommandDecoder extends ByteToMessageDecoder {
+public class CommandDecoder extends MessageToMessageDecoder<TextWebSocketFrame> {
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, TextWebSocketFrame webSocketFrame, List<Object> out) throws Exception {
+        ByteBuf in = webSocketFrame.content();
         int readerIndex = in.readerIndex();
         int readableBytes = in.readableBytes();
         String lineNumString = readLine(in);
-        if (!lineNumString.startsWith("*")) {
-            throw new ProtocolViolationException(String.format("Protocol violation: Expected line to start with '*', but got '%s'", lineNumString));
-        }
-        int lineNum = Integer.parseInt(lineNumString.substring(1));
-        List<String> elements = new ArrayList<>();
-        try{
-            for(int i = 0; i < lineNum; ++i) {
-                String line = readLine(in);
-                if (Objects.isNull(line)) {
-                    break;
-                }
-                if(!line.startsWith("$")){
-                    throw new ProtocolViolationException(String.format("Protocol violation: Expected line to start with '$', but got '%s'", line));
-                }
-                String lenString = line.substring(1);
-                int len = Integer.parseInt(lenString);
-                if (in.readableBytes() < len + 2) {
-                    throw new NotEnoughDataException();
-                }
-                byte[] bytes = new byte[len];
-                in.readBytes(bytes);
-                String data = new String(bytes, StandardCharsets.UTF_8);
-                elements.add(data);
-                // skip \r\n
-                in.readBytes(2);
-            }
-            out.add(elements);
-        } catch (NotEnoughDataException e) {
-            in.resetReaderIndex();
-        }
+        String[] commandArray = lineNumString.split(" ");
+        out.add(Arrays.asList(commandArray));
     }
 
     private String readLine(ByteBuf in) {

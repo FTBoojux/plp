@@ -3,9 +3,12 @@ package org.example.handlers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.example.store.Command.CommandDispatcher;
 import org.example.store.Command.CommandExecutor;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class KvStoreHandler extends ChannelInboundHandlerAdapter {
@@ -19,7 +22,7 @@ public class KvStoreHandler extends ChannelInboundHandlerAdapter {
         String command = commands.get(0);
         CommandExecutor executor = commandDispatcher.getExecutor(command);
         String response = executor.execute(commands);
-        ctx.write(response);
+        ctx.write(new TextWebSocketFrame(response));
         ctx.flush();
     }
 }
